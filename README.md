@@ -37,9 +37,4 @@ Mobius Hotline Client is a cross-platform command line [Hotline](https://en.wiki
 
 ## Screenshots 
 
-### Mobius client on macOS with [tmux](https://github.com/tmux/tmux/wiki)
-![Mobius client in tmux 2](https://user-images.githubusercontent.com/868228/173259945-3e43adf1-da04-47c5-8878-c5a0affb650c.jpg)
-![Mobius client in tmux](https://user-images.githubusercontent.com/868228/173259948-c371acc4-4cbb-4a17-82b5-5d5842c5242c.jpg)
-
-### Mobius client on Windows
-![mobius-client-on-windows](https://user-images.githubusercontent.com/868228/173259949-d91ab127-8904-41dd-b431-ff50b218d2b0.jpg)
+<img width="837" alt="Screenshot 2024-07-21 at 4 14 51 PM" src="https://github.com/user-attachments/assets/b01d3deb-c8e0-46b4-9663-f94bc15fa0ec">
