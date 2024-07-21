@@ -4,15 +4,12 @@ import (
 	"embed"
 	"fmt"
 	"math/rand"
-	"time"
 )
 
 //go:embed banners/*.txt
 var bannerDir embed.FS
 
 func randomBanner() string {
-	rand.Seed(time.Now().UnixNano())
-
 	bannerFiles, _ := bannerDir.ReadDir("banners")
 	file, _ := bannerDir.ReadFile("banners/" + bannerFiles[rand.Intn(len(bannerFiles))].Name())
 

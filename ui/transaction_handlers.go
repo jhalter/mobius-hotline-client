@@ -47,7 +47,7 @@ func (mhc *Client) HandleTranServerMsg(ctx context.Context, c *hotline.Client, t
 	msgBox.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEscape:
-			mhc.UI.Pages.RemovePage("serverMsgModal" + now)
+			mhc.Pages.RemovePage("serverMsgModal" + now)
 		}
 		return event
 	})
@@ -60,8 +60,8 @@ func (mhc *Client) HandleTranServerMsg(ctx context.Context, c *hotline.Client, t
 			AddItem(nil, 0, 1, false), 0, 2, true).
 		AddItem(nil, 0, 1, false)
 
-	mhc.UI.Pages.AddPage("serverMsgModal"+now, centeredFlex, true, true)
-	mhc.UI.App.Draw() // TODO: errModal doesn't render without this.  wtf?
+	mhc.Pages.AddPage("serverMsgModal"+now, centeredFlex, true, true)
+	mhc.App.Draw() // TODO: errModal doesn't render without this.  wtf?
 
 	return res, err
 }
@@ -77,7 +77,7 @@ func (mhc *Client) showErrMsg(msg string) {
 	msgBox.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEscape:
-			mhc.UI.Pages.RemovePage("serverMsgModal" + t)
+			mhc.Pages.RemovePage("serverMsgModal" + t)
 		}
 		return event
 	})
@@ -90,12 +90,12 @@ func (mhc *Client) showErrMsg(msg string) {
 			AddItem(nil, 0, 1, false), 0, 2, true).
 		AddItem(nil, 0, 1, false)
 
-	mhc.UI.Pages.AddPage("serverMsgModal"+t, centeredFlex, true, true)
-	mhc.UI.App.Draw() // TODO: errModal doesn't render without this.  wtf?
+	mhc.Pages.AddPage("serverMsgModal"+t, centeredFlex, true, true)
+	mhc.App.Draw() // TODO: errModal doesn't render without this.  wtf?
 }
 
 func (mhc *Client) HandleGetFileNameList(ctx context.Context, c *hotline.Client, t *hotline.Transaction) (res []hotline.Transaction, err error) {
-	if t.IsError() {
+	if t.ErrorCode == [4]byte{0, 0, 0, 1} {
 		mhc.showErrMsg(string(t.GetField(hotline.FieldError).Data))
 		return res, err
 	}
@@ -107,7 +107,7 @@ func (mhc *Client) HandleGetFileNameList(ctx context.Context, c *hotline.Client,
 	fTree.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEscape:
-			mhc.UI.Pages.RemovePage("files")
+			mhc.Pages.RemovePage("files")
 			mhc.filePath = []string{}
 		case tcell.KeyEnter:
 			selectedNode := fTree.GetCurrentNode()
@@ -116,8 +116,8 @@ func (mhc *Client) HandleGetFileNameList(ctx context.Context, c *hotline.Client,
 				mhc.filePath = mhc.filePath[:len(mhc.filePath)-1]
 				f := hotline.NewField(hotline.FieldFilePath, hotline.EncodeFilePath(strings.Join(mhc.filePath, "/")))
 
-				if err := mhc.UI.HLClient.Send(*hotline.NewTransaction(hotline.TranGetFileNameList, nil, f)); err != nil {
-					mhc.UI.HLClient.Logger.Error("err", "err", err)
+				if err := mhc.HLClient.Send(hotline.NewTransaction(hotline.TranGetFileNameList, [2]byte{}, f)); err != nil {
+					mhc.HLClient.Logger.Error("err", "err", err)
 				}
 				return event
 			}
@@ -130,8 +130,8 @@ func (mhc *Client) HandleGetFileNameList(ctx context.Context, c *hotline.Client,
 				mhc.filePath = append(mhc.filePath, string(entry.Name))
 				f := hotline.NewField(hotline.FieldFilePath, hotline.EncodeFilePath(strings.Join(mhc.filePath, "/")))
 
-				if err := mhc.UI.HLClient.Send(*hotline.NewTransaction(hotline.TranGetFileNameList, nil, f)); err != nil {
-					mhc.UI.HLClient.Logger.Error("err", "err", err)
+				if err := mhc.HLClient.Send(hotline.NewTransaction(hotline.TranGetFileNameList, [2]byte{}, f)); err != nil {
+					mhc.HLClient.Logger.Error("err", "err", err)
 				}
 			} else {
 				// TODO: initiate file download
@@ -176,8 +176,8 @@ func (mhc *Client) HandleGetFileNameList(ctx context.Context, c *hotline.Client,
 			AddItem(nil, 0, 1, false), 60, 1, true).
 		AddItem(nil, 0, 1, false)
 
-	mhc.UI.Pages.AddPage("files", centerFlex, true, true)
-	mhc.UI.App.Draw()
+	mhc.Pages.AddPage("files", centerFlex, true, true)
+	mhc.App.Draw()
 
 	return res, err
 }
@@ -189,22 +189,22 @@ func (mhc *Client) TranGetMsgs(ctx context.Context, c *hotline.Client, t *hotlin
 	newsTextView := tview.NewTextView().
 		SetText(newsText).
 		SetDoneFunc(func(key tcell.Key) {
-			mhc.UI.Pages.SwitchToPage(serverUIPage)
-			mhc.UI.App.SetFocus(mhc.UI.chatInput)
+			mhc.Pages.SwitchToPage(serverUIPage)
+			mhc.App.SetFocus(mhc.chatInput)
 		})
 	newsTextView.SetBorder(true).SetTitle("News")
 
-	mhc.UI.Pages.AddPage("news", newsTextView, true, true)
-	// mhc.UI.Pages.SwitchToPage("news")
-	// mhc.UI.App.SetFocus(newsTextView)
-	mhc.UI.App.Draw()
+	mhc.Pages.AddPage("news", newsTextView, true, true)
+	// mhc.Pages.SwitchToPage("news")
+	// mhc.App.SetFocus(newsTextView)
+	mhc.App.Draw()
 
 	return res, err
 }
 
 func (mhc *Client) HandleNotifyChangeUser(ctx context.Context, c *hotline.Client, t *hotline.Transaction) (res []hotline.Transaction, err error) {
 	newUser := hotline.User{
-		ID:    t.GetField(hotline.FieldUserID).Data,
+		ID:    [2]byte(t.GetField(hotline.FieldUserID).Data),
 		Name:  string(t.GetField(hotline.FieldUserName).Data),
 		Icon:  t.GetField(hotline.FieldUserIconID).Data,
 		Flags: t.GetField(hotline.FieldUserFlags).Data,
@@ -217,12 +217,12 @@ func (mhc *Client) HandleNotifyChangeUser(ctx context.Context, c *hotline.Client
 	var oldName string
 	var newUserList []hotline.User
 	updatedUser := false
-	for _, u := range c.UserList {
-		if bytes.Equal(newUser.ID, u.ID) {
+	for _, u := range mhc.UserList {
+		if newUser.ID == u.ID {
 			oldName = u.Name
 			u.Name = newUser.Name
 			if u.Name != newUser.Name {
-				_, _ = fmt.Fprintf(mhc.UI.chatBox, " <<< "+oldName+" is now known as "+newUser.Name+" >>>\n")
+				_, _ = fmt.Fprintf(mhc.chatBox, " <<< "+oldName+" is now known as "+newUser.Name+" >>>\n")
 			}
 			updatedUser = true
 		}
@@ -233,7 +233,7 @@ func (mhc *Client) HandleNotifyChangeUser(ctx context.Context, c *hotline.Client
 		newUserList = append(newUserList, newUser)
 	}
 
-	c.UserList = newUserList
+	mhc.UserList = newUserList
 
 	mhc.renderUserList()
 
@@ -244,13 +244,13 @@ func (mhc *Client) HandleNotifyDeleteUser(ctx context.Context, c *hotline.Client
 	exitUser := t.GetField(hotline.FieldUserID).Data
 
 	var newUserList []hotline.User
-	for _, u := range c.UserList {
-		if !bytes.Equal(exitUser, u.ID) {
+	for _, u := range mhc.UserList {
+		if !bytes.Equal(exitUser, u.ID[:]) {
 			newUserList = append(newUserList, u)
 		}
 	}
 
-	c.UserList = newUserList
+	mhc.UserList = newUserList
 
 	mhc.renderUserList()
 
@@ -263,7 +263,7 @@ func (mhc *Client) HandleClientGetUserNameList(ctx context.Context, c *hotline.C
 		// The Hotline protocol docs say that ClientGetUserNameList should only return hotline.FieldUserNameWithInfo (300)
 		// fields, but shxd sneaks in FieldChatSubject (115) so it's important to filter explicitly for the expected
 		// field type.  Probably a good idea to do everywhere.
-		if field.ID == [2]byte{0x01, 0x2c} {
+		if field.Type == hotline.FieldUsernameWithInfo {
 			var user hotline.User
 			if _, err := user.Write(field.Data); err != nil {
 				return res, fmt.Errorf("unable to read user data: %w", err)
@@ -273,20 +273,19 @@ func (mhc *Client) HandleClientGetUserNameList(ctx context.Context, c *hotline.C
 		}
 	}
 	mhc.UserList = users
-
 	mhc.renderUserList()
 
 	return res, err
 }
 
 func (mhc *Client) renderUserList() {
-	mhc.UI.userList.Clear()
+	mhc.userList.Clear()
 	for _, u := range mhc.UserList {
 		flagBitmap := big.NewInt(int64(binary.BigEndian.Uint16(u.Flags)))
 		if flagBitmap.Bit(hotline.UserFlagAdmin) == 1 {
-			_, _ = fmt.Fprintf(mhc.UI.userList, "[red::b]%s[-:-:-]\n", u.Name)
+			_, _ = fmt.Fprintf(mhc.userList, "[red::b]%s[-:-:-]\n", u.Name)
 		} else {
-			_, _ = fmt.Fprintf(mhc.UI.userList, "%s\n", u.Name)
+			_, _ = fmt.Fprintf(mhc.userList, "%s\n", u.Name)
 		}
 		// TODO: fade if user is away
 	}
@@ -297,13 +296,13 @@ func (mhc *Client) HandleClientChatMsg(ctx context.Context, c *hotline.Client, t
 		fmt.Println("\a")
 	}
 
-	_, _ = fmt.Fprintf(mhc.UI.chatBox, "%s \n", t.GetField(hotline.FieldData).Data)
+	_, _ = fmt.Fprintf(mhc.chatBox, "%s \n", t.GetField(hotline.FieldData).Data)
 
 	return res, err
 }
 
 func (mhc *Client) HandleClientTranUserAccess(ctx context.Context, c *hotline.Client, t *hotline.Transaction) (res []hotline.Transaction, err error) {
-	c.UserAccess = t.GetField(hotline.FieldUserAccess).Data
+	mhc.UserAccess = t.GetField(hotline.FieldUserAccess).Data
 
 	return res, err
 }
@@ -318,49 +317,49 @@ func (mhc *Client) HandleClientTranShowAgreement(ctx context.Context, c *hotline
 		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 			if buttonIndex == 0 {
 				res = append(res,
-					*hotline.NewTransaction(
-						hotline.TranAgreed, nil,
+					hotline.NewTransaction(
+						hotline.TranAgreed, [2]byte{},
 						hotline.NewField(hotline.FieldUserName, []byte(c.Pref.Username)),
 						hotline.NewField(hotline.FieldUserIconID, c.Pref.IconBytes()),
 						hotline.NewField(hotline.FieldUserFlags, []byte{0x00, 0x00}),
 						hotline.NewField(hotline.FieldOptions, []byte{0x00, 0x00}),
 					),
 				)
-				mhc.UI.Pages.HidePage("agreement")
-				mhc.UI.App.SetFocus(mhc.UI.chatInput)
+				mhc.Pages.HidePage("agreement")
+				mhc.App.SetFocus(mhc.chatInput)
 			} else {
 				_ = c.Disconnect()
-				mhc.UI.Pages.SwitchToPage("home")
+				mhc.Pages.SwitchToPage("home")
 			}
 		},
 		)
 
-	mhc.UI.Pages.AddPage("agreement", agreeModal, false, true)
+	mhc.Pages.AddPage("agreement", agreeModal, false, true)
 
 	return res, err
 }
 
 func (mhc *Client) HandleClientTranLogin(ctx context.Context, c *hotline.Client, t *hotline.Transaction) (res []hotline.Transaction, err error) {
-	if !bytes.Equal(t.ErrorCode, []byte{0, 0, 0, 0}) {
+	if t.ErrorCode != [4]byte{0, 0, 0, 0} {
 		errMsg := string(t.GetField(hotline.FieldError).Data)
 		errModal := tview.NewModal()
 		errModal.SetText(errMsg)
 		errModal.AddButtons([]string{"Oh no"})
 		errModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-			mhc.UI.Pages.RemovePage("errModal")
+			mhc.Pages.RemovePage("errModal")
 		})
-		mhc.UI.Pages.RemovePage("joinServer")
-		mhc.UI.Pages.AddPage("errModal", errModal, false, true)
+		mhc.Pages.RemovePage("joinServer")
+		mhc.Pages.AddPage("errModal", errModal, false, true)
 
-		mhc.UI.App.Draw() // TODO: errModal doesn't render without this.  wtf?
+		mhc.App.Draw() // TODO: errModal doesn't render without this.  wtf?
 
 		c.Logger.Error(string(t.GetField(hotline.FieldError).Data))
 		return nil, errors.New("login error: " + string(t.GetField(hotline.FieldError).Data))
 	}
-	mhc.UI.Pages.AddAndSwitchToPage(serverUIPage, mhc.UI.renderServerUI(), true)
-	mhc.UI.App.SetFocus(mhc.UI.chatInput)
+	mhc.Pages.AddAndSwitchToPage(serverUIPage, mhc.renderServerUI(), true)
+	mhc.App.SetFocus(mhc.chatInput)
 
-	if err := c.Send(*hotline.NewTransaction(hotline.TranGetUserNameList, nil)); err != nil {
+	if err := c.Send(hotline.NewTransaction(hotline.TranGetUserNameList, [2]byte{})); err != nil {
 		c.Logger.Error("err", "err", err)
 	}
 	return res, err

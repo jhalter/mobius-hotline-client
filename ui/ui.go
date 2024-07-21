@@ -13,6 +13,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // DebugBuffer wraps a *tview.TextView and adds a Sync() method to make it available as a Zap logger
@@ -50,39 +51,34 @@ func (cp *ClientPrefs) IconBytes() []byte {
 	return iconBytes
 }
 
-func (cp *ClientPrefs) AddBookmark(name, addr, login, pass string) {
+func (cp *ClientPrefs) AddBookmark(_, addr, login, pass string) {
 	cp.Bookmarks = append(cp.Bookmarks, Bookmark{Addr: addr, Login: login, Password: pass})
 }
 
 type Client struct {
-	CfgPath     string
-	DebugBuf    *DebugBuffer
-	Connection  net.Conn
-	UserAccess  []byte
-	filePath    []string
-	UserList    []hotline.User
-	Logger      *slog.Logger
-	activeTasks map[uint32]*hotline.Transaction
-	ServerName  string
+	CfgPath    string
+	DebugBuf   *DebugBuffer
+	Connection net.Conn
+	UserAccess []byte
+	filePath   []string
+	UserList   []hotline.User
+	Logger     *slog.Logger
+	ServerName string
 
 	Pref *ClientPrefs
 
 	Handlers map[uint16]hotline.ClientHandler
 
-	UI *UI
-
-	Inbox chan *hotline.Transaction
-}
-
-type UI struct {
 	chatBox     *tview.TextView
 	chatInput   *tview.InputField
 	App         *tview.Application
 	Pages       *tview.Pages
 	userList    *tview.TextView
 	trackerList *tview.List
-	Pref        *ClientPrefs
+	DebugBuffer *DebugBuffer
 	HLClient    *hotline.Client
+
+	Inbox chan *hotline.Transaction
 }
 
 // pages
@@ -92,44 +88,20 @@ const (
 	serverUIPage    = "serverUI"
 )
 
-// ui.Client
-// -> UI: ui.UI
-//    -> UI.HLClient
-
-func NewUIClient(cfgPath string, logger *slog.Logger) *Client {
-	c := &Client{
-		CfgPath: cfgPath,
-		Logger:  logger,
-		//activeTasks: make(map[uint32]*Transaction),
-		//Handlers: DefaultClientHandlers,q
-	}
-
+func NewUIClient(cfgPath string, logger *slog.Logger, db *DebugBuffer) *Client {
 	prefs, err := readConfig(cfgPath)
 	if err != nil {
 		logger.Error(fmt.Sprintf("unable to read config file %s\n", cfgPath))
 		os.Exit(1)
 	}
-	c.Pref = prefs
-	c.UI = NewUI(c)
 
-	return c
-}
-
-func readConfig(cfgPath string) (*ClientPrefs, error) {
-	fh, err := os.Open(cfgPath)
-	if err != nil {
-		return nil, err
+	c := &Client{
+		CfgPath:  cfgPath,
+		Logger:   logger,
+		Pref:     prefs,
+		DebugBuf: db,
 	}
 
-	prefs := ClientPrefs{}
-	decoder := yaml.NewDecoder(fh)
-	if err := decoder.Decode(&prefs); err != nil {
-		return nil, err
-	}
-	return &prefs, nil
-}
-
-func NewUI(c *Client) *UI {
 	app := tview.NewApplication()
 	chatBox := tview.NewTextView().
 		SetScrollable(true).
@@ -150,11 +122,10 @@ func NewUI(c *Client) *UI {
 				return
 			}
 
-			_ = c.UI.HLClient.Send(
-				*hotline.NewTransaction(hotline.TranChatSend, nil,
-					hotline.NewField(hotline.FieldData, []byte(chatInput.GetText())),
-				),
+			t := hotline.NewTransaction(hotline.TranChatSend, [2]byte{},
+				hotline.NewField(hotline.FieldData, []byte(chatInput.GetText())),
 			)
+			_ = c.HLClient.Send(t)
 			chatInput.SetText("") // clear the input field after chat send
 		})
 
@@ -168,107 +139,122 @@ func NewUI(c *Client) *UI {
 		})
 	userList.Box.SetBorder(true).SetTitle("Users")
 
-	return &UI{
-		App:         app,
-		chatBox:     chatBox,
-		Pages:       tview.NewPages(),
-		chatInput:   chatInput,
-		userList:    userList,
-		trackerList: tview.NewList(),
-		HLClient:    hotline.NewClient(c.Pref.Username, c.Logger),
-		Pref:        c.Pref,
-	}
+	c.App = app
+	c.chatBox = chatBox
+	c.Pages = tview.NewPages()
+	c.chatInput = chatInput
+	c.userList = userList
+	c.trackerList = tview.NewList()
+	c.HLClient = hotline.NewClient(c.Pref.Username, c.Logger)
+	//c.Pref = c.Pref
+	c.DebugBuffer = c.DebugBuf
+
+	return c
 }
 
-func (ui *UI) showBookmarks() *tview.List {
+func readConfig(cfgPath string) (*ClientPrefs, error) {
+	fh, err := os.Open(cfgPath)
+	if err != nil {
+		return nil, err
+	}
+
+	prefs := ClientPrefs{}
+	decoder := yaml.NewDecoder(fh)
+	if err := decoder.Decode(&prefs); err != nil {
+		return nil, err
+	}
+	return &prefs, nil
+}
+
+func (mhc *Client) showBookmarks() *tview.List {
 	list := tview.NewList()
 	list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEsc {
-			ui.Pages.SwitchToPage("home")
+			mhc.Pages.SwitchToPage("home")
 		}
 		return event
 	})
 	list.Box.SetBorder(true).SetTitle("| Bookmarks |")
 
 	shortcut := 97 // rune for "a"
-	for i, srv := range ui.Pref.Bookmarks {
+	for i, srv := range mhc.Pref.Bookmarks {
 		addr := srv.Addr
 		login := srv.Login
 		pass := srv.Password
 		list.AddItem(srv.Name, srv.Addr, rune(shortcut+i), func() {
-			ui.Pages.RemovePage("joinServer")
+			mhc.Pages.RemovePage("joinServer")
 
-			newJS := ui.renderJoinServerForm("", addr, login, pass, "bookmarks", true, true)
+			newJS := mhc.renderJoinServerForm("", addr, login, pass, "bookmarks", true, true)
 
-			ui.Pages.AddPage("joinServer", newJS, true, true)
+			mhc.Pages.AddPage("joinServer", newJS, true, true)
 		})
 	}
 
 	return list
 }
 
-func (ui *UI) getTrackerList(servers []hotline.ServerRecord) *tview.List {
+func (mhc *Client) getTrackerList(servers []hotline.ServerRecord) *tview.List {
 	list := tview.NewList()
 	list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEsc {
-			ui.Pages.SwitchToPage("home")
+			mhc.Pages.SwitchToPage("home")
 		}
 		return event
 	})
 	list.Box.SetBorder(true).SetTitle("| Servers |")
 
 	const shortcut = 97 // rune for "a"
-	for i, _ := range servers {
+	for i := range servers {
 		srv := servers[i]
 		list.AddItem(string(srv.Name), string(srv.Description), rune(shortcut+i), func() {
-			ui.Pages.RemovePage("joinServer")
+			mhc.Pages.RemovePage("joinServer")
 
-			newJS := ui.renderJoinServerForm(string(srv.Name), srv.Addr(), hotline.GuestAccount, "", trackerListPage, false, true)
+			newJS := mhc.renderJoinServerForm(string(srv.Name), srv.Addr(), hotline.GuestAccount, "", trackerListPage, false, true)
 
-			ui.Pages.AddPage("joinServer", newJS, true, true)
-			ui.Pages.ShowPage("joinServer")
+			mhc.Pages.AddPage("joinServer", newJS, true, true)
+			mhc.Pages.ShowPage("joinServer")
 		})
 	}
 
 	return list
 }
 
-func (ui *UI) renderSettingsForm() *tview.Flex {
-	iconStr := strconv.Itoa(ui.Pref.IconID)
+func (mhc *Client) renderSettingsForm() *tview.Flex {
+	iconStr := strconv.Itoa(mhc.Pref.IconID)
 	settingsForm := tview.NewForm()
-	settingsForm.AddInputField("Your Name", ui.Pref.Username, 0, nil, nil)
+	settingsForm.AddInputField("Your Name", mhc.Pref.Username, 0, nil, nil)
 	settingsForm.AddInputField("IconID", iconStr, 0, func(idStr string, _ rune) bool {
 		_, err := strconv.Atoi(idStr)
 		return err == nil
 	}, nil)
-	settingsForm.AddInputField("Tracker", ui.Pref.Tracker, 0, nil, nil)
-	settingsForm.AddCheckbox("Enable Terminal Bell", ui.Pref.EnableBell, nil)
+	settingsForm.AddInputField("Tracker", mhc.Pref.Tracker, 0, nil, nil)
+	settingsForm.AddCheckbox("Enable Terminal Bell", mhc.Pref.EnableBell, nil)
 	settingsForm.AddButton("Save", func() {
 		usernameInput := settingsForm.GetFormItem(0).(*tview.InputField).GetText()
 		if len(usernameInput) == 0 {
 			usernameInput = "unnamed"
 		}
-		ui.Pref.Username = usernameInput
+		mhc.Pref.Username = usernameInput
 		iconStr = settingsForm.GetFormItem(1).(*tview.InputField).GetText()
-		ui.Pref.IconID, _ = strconv.Atoi(iconStr)
-		ui.Pref.Tracker = settingsForm.GetFormItem(2).(*tview.InputField).GetText()
-		ui.Pref.EnableBell = settingsForm.GetFormItem(3).(*tview.Checkbox).IsChecked()
+		mhc.Pref.IconID, _ = strconv.Atoi(iconStr)
+		mhc.Pref.Tracker = settingsForm.GetFormItem(2).(*tview.InputField).GetText()
+		mhc.Pref.EnableBell = settingsForm.GetFormItem(3).(*tview.Checkbox).IsChecked()
 
-		out, err := yaml.Marshal(&ui.Pref)
+		out, err := yaml.Marshal(&mhc.Pref)
 		if err != nil {
 			// TODO: handle err
 		}
 		// TODO: handle err
-		err = os.WriteFile(ui.HLClient.CfgPath, out, 0666)
+		err = os.WriteFile(mhc.CfgPath, out, 0666)
 		if err != nil {
-			println(ui.HLClient.CfgPath)
+			println(mhc.CfgPath)
 			panic(err)
 		}
-		ui.Pages.RemovePage("settings")
+		mhc.Pages.RemovePage("settings")
 	})
 	settingsForm.SetBorder(true)
 	settingsForm.SetCancelFunc(func() {
-		ui.Pages.RemovePage("settings")
+		mhc.Pages.RemovePage("settings")
 	})
 	settingsPage := tview.NewFlex().SetDirection(tview.FlexRow)
 	settingsPage.Box.SetBorder(true).SetTitle("Settings")
@@ -286,66 +272,66 @@ func (ui *UI) renderSettingsForm() *tview.Flex {
 	return centerFlex
 }
 
-func (ui *UI) joinServer(addr, login, password string) error {
+func (mhc *Client) joinServer(addr, login, password string) error {
 	// append default port to address if no port supplied
 	if len(strings.Split(addr, ":")) == 1 {
 		addr += ":5500"
 	}
-	if err := ui.HLClient.Connect(addr, login, password); err != nil {
+	if err := mhc.HLClient.Connect(addr, login, password); err != nil {
 		return fmt.Errorf("Error joining server: %v\n", err)
 	}
 
 	go func() {
-		if err := ui.HLClient.HandleTransactions(context.TODO()); err != nil {
-			ui.Pages.SwitchToPage("home")
+		if err := mhc.HLClient.HandleTransactions(context.TODO()); err != nil {
+			mhc.Pages.SwitchToPage("home")
 		}
 
 		loginErrModal := tview.NewModal().
 			AddButtons([]string{"Ok"}).
 			SetText("The server connection has closed.").
 			SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-				ui.Pages.SwitchToPage("home")
+				mhc.Pages.SwitchToPage("home")
 			})
 		loginErrModal.Box.SetTitle("Server Connection Error")
 
-		ui.Pages.AddPage("loginErr", loginErrModal, false, true)
-		ui.App.Draw()
+		mhc.Pages.AddPage("loginErr", loginErrModal, false, true)
+		mhc.App.Draw()
 	}()
 
 	return nil
 }
 
-func (ui *UI) renderJoinServerForm(name, server, login, password, backPage string, save, defaultConnect bool) *tview.Flex {
+func (mhc *Client) renderJoinServerForm(name, server, login, password, backPage string, save, defaultConnect bool) *tview.Flex {
 	joinServerForm := tview.NewForm()
 	joinServerForm.
 		AddInputField("Server", server, 0, nil, nil).
 		AddInputField("Login", login, 0, nil, nil).
 		AddPasswordField("Password", password, 0, '*', nil).
 		AddCheckbox("Save", save, func(checked bool) {
-			ui.Pref.AddBookmark(
+			mhc.Pref.AddBookmark(
 				joinServerForm.GetFormItem(0).(*tview.InputField).GetText(),
 				joinServerForm.GetFormItem(0).(*tview.InputField).GetText(),
 				joinServerForm.GetFormItem(1).(*tview.InputField).GetText(),
 				joinServerForm.GetFormItem(2).(*tview.InputField).GetText(),
 			)
 
-			out, err := yaml.Marshal(ui.Pref)
+			out, err := yaml.Marshal(mhc.Pref)
 			if err != nil {
 				panic(err)
 			}
 
-			err = os.WriteFile(ui.HLClient.CfgPath, out, 0666)
+			err = os.WriteFile(mhc.CfgPath, out, 0666)
 			if err != nil {
 				panic(err)
 			}
 		}).
 		AddButton("Cancel", func() {
-			ui.Pages.SwitchToPage(backPage)
+			mhc.Pages.SwitchToPage(backPage)
 		}).
 		AddButton("Connect", func() {
 			srvAddr := joinServerForm.GetFormItem(0).(*tview.InputField).GetText()
 			loginInput := joinServerForm.GetFormItem(1).(*tview.InputField).GetText()
-			err := ui.joinServer(
+			err := mhc.joinServer(
 				srvAddr,
 				loginInput,
 				joinServerForm.GetFormItem(2).(*tview.InputField).GetText(),
@@ -353,18 +339,18 @@ func (ui *UI) renderJoinServerForm(name, server, login, password, backPage strin
 			if name == "" {
 				name = fmt.Sprintf("%s@%s", loginInput, srvAddr)
 			}
-			ui.HLClient.ServerName = name
+			mhc.ServerName = name
 
 			if err != nil {
-				ui.HLClient.Logger.Error("login error", "err", err)
+				mhc.HLClient.Logger.Error("login error", "err", err)
 				loginErrModal := tview.NewModal().
 					AddButtons([]string{"Oh no"}).
 					SetText(err.Error()).
 					SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-						ui.Pages.SwitchToPage(backPage)
+						mhc.Pages.SwitchToPage(backPage)
 					})
 
-				ui.Pages.AddPage("loginErr", loginErrModal, false, true)
+				mhc.Pages.AddPage("loginErr", loginErrModal, false, true)
 			}
 
 			// Save checkbox
@@ -376,7 +362,7 @@ func (ui *UI) renderJoinServerForm(name, server, login, password, backPage strin
 	joinServerForm.Box.SetBorder(true).SetTitle("| Connect |")
 	joinServerForm.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEscape {
-			ui.Pages.SwitchToPage(backPage)
+			mhc.Pages.SwitchToPage(backPage)
 		}
 		return event
 	})
@@ -397,8 +383,8 @@ func (ui *UI) renderJoinServerForm(name, server, login, password, backPage strin
 	return joinServerPage
 }
 
-func (ui *UI) renderServerUI() *tview.Flex {
-	ui.chatBox.SetText("") // clear any previously existing chatbox text
+func (mhc *Client) renderServerUI() *tview.Flex {
+	mhc.chatBox.SetText("") // clear any previously existing chatbox text
 	commandList := tview.NewTextView().SetDynamicColors(true)
 	commandList.
 		SetText("[yellow]^n[-::]: Read News   [yellow]^p[-::]: Post News\n[yellow]^l[-::]: View Logs   [yellow]^f[-::]: View Files\n").
@@ -411,11 +397,11 @@ func (ui *UI) renderServerUI() *tview.Flex {
 		SetFocus(1)
 	modal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		if buttonIndex == 1 {
-			_ = ui.HLClient.Disconnect()
-			ui.Pages.RemovePage(pageServerUI)
-			ui.Pages.SwitchToPage("home")
+			_ = mhc.HLClient.Disconnect()
+			mhc.Pages.RemovePage(pageServerUI)
+			mhc.Pages.SwitchToPage("home")
 		} else {
-			ui.Pages.HidePage("modal")
+			mhc.Pages.HidePage("modal")
 		}
 	})
 
@@ -423,26 +409,26 @@ func (ui *UI) renderServerUI() *tview.Flex {
 		AddItem(tview.NewFlex().
 			SetDirection(tview.FlexRow).
 			AddItem(commandList, 4, 0, false).
-			AddItem(ui.chatBox, 0, 8, false).
-			AddItem(ui.chatInput, 3, 0, true), 0, 1, true).
-		AddItem(ui.userList, 25, 1, false)
-	serverUI.SetBorder(true).SetTitle("| Mobius - Connected to " + ui.HLClient.ServerName + " |").SetTitleAlign(tview.AlignLeft)
+			AddItem(mhc.chatBox, 0, 8, false).
+			AddItem(mhc.chatInput, 3, 0, true), 0, 1, true).
+		AddItem(mhc.userList, 25, 1, false)
+	serverUI.SetBorder(true).SetTitle("| Mobius - Connected to " + mhc.ServerName + " |").SetTitleAlign(tview.AlignLeft)
 	serverUI.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEscape {
-			ui.Pages.AddPage("modal", modal, false, true)
+			mhc.Pages.AddPage("modal", modal, false, true)
 		}
 
 		// List files
 		if event.Key() == tcell.KeyCtrlF {
-			if err := ui.HLClient.Send(*hotline.NewTransaction(hotline.TranGetFileNameList, nil)); err != nil {
-				ui.HLClient.Logger.Error("err", "err", err)
+			if err := mhc.HLClient.Send(hotline.NewTransaction(hotline.TranGetFileNameList, [2]byte{})); err != nil {
+				mhc.HLClient.Logger.Error("err", "err", err)
 			}
 		}
 
 		// Show News
 		if event.Key() == tcell.KeyCtrlN {
-			if err := ui.HLClient.Send(*hotline.NewTransaction(hotline.TranGetMsgs, nil)); err != nil {
-				ui.HLClient.Logger.Error("err", "err", err)
+			if err := mhc.HLClient.Send(hotline.NewTransaction(hotline.TranGetMsgs, [2]byte{})); err != nil {
+				mhc.HLClient.Logger.Error("err", "err", err)
 			}
 		}
 
@@ -453,7 +439,7 @@ func (ui *UI) renderServerUI() *tview.Flex {
 			newsPostTextArea := tview.NewTextView()
 			newsPostTextArea.SetBackgroundColor(tcell.ColorDarkSlateGrey)
 			newsPostTextArea.SetChangedFunc(func() {
-				ui.App.Draw() // TODO: docs say this is bad but it's the only way to show content during initial render??
+				mhc.App.Draw() // TODO: docs say this is bad but it's the only way to show content during initial render??
 			})
 
 			newsPostForm := tview.NewForm().
@@ -463,24 +449,24 @@ func (ui *UI) renderServerUI() *tview.Flex {
 			newsPostForm.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 				switch event.Key() {
 				case tcell.KeyEscape:
-					ui.Pages.RemovePage("newsInput")
+					mhc.Pages.RemovePage("newsInput")
 				case tcell.KeyTab:
-					ui.App.SetFocus(newsPostTextArea)
+					mhc.App.SetFocus(newsPostTextArea)
 				case tcell.KeyEnter:
 					newsText := strings.ReplaceAll(newsPostTextArea.GetText(true), "\n", "\r")
 					if len(newsText) == 0 {
 						return event
 					}
-					err := ui.HLClient.Send(
-						*hotline.NewTransaction(hotline.TranOldPostNews, nil,
+					err := mhc.HLClient.Send(
+						hotline.NewTransaction(hotline.TranOldPostNews, [2]byte{},
 							hotline.NewField(hotline.FieldData, []byte(newsText)),
 						),
 					)
 					if err != nil {
-						ui.HLClient.Logger.Error("Error posting news", "err", err)
+						mhc.HLClient.Logger.Error("Error posting news", "err", err)
 						// TODO: display errModal to user
 					}
-					ui.Pages.RemovePage("newsInput")
+					mhc.Pages.RemovePage("newsInput")
 				}
 
 				return event
@@ -494,9 +480,9 @@ func (ui *UI) renderServerUI() *tview.Flex {
 			newsPostTextArea.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 				switch event.Key() {
 				case tcell.KeyEscape:
-					ui.Pages.RemovePage("newsInput")
+					mhc.Pages.RemovePage("newsInput")
 				case tcell.KeyTab:
-					ui.App.SetFocus(newsPostForm)
+					mhc.App.SetFocus(newsPostForm)
 				case tcell.KeyEnter:
 					_, _ = fmt.Fprintf(newsPostTextArea, "\n")
 				default:
@@ -530,8 +516,8 @@ func (ui *UI) renderServerUI() *tview.Flex {
 					AddItem(nil, 0, 1, false), 40, 1, false).
 				AddItem(nil, 0, 1, false)
 
-			ui.Pages.AddPage("newsInput", newsPostPage, true, true)
-			ui.App.SetFocus(newsPostTextArea)
+			mhc.Pages.AddPage("newsInput", newsPostPage, true, true)
+			mhc.App.SetFocus(newsPostTextArea)
 		}
 
 		return event
@@ -539,9 +525,9 @@ func (ui *UI) renderServerUI() *tview.Flex {
 	return serverUI
 }
 
-func (ui *UI) Start() {
+func (mhc *Client) Start() {
 	home := tview.NewFlex().SetDirection(tview.FlexRow)
-	home.Box.SetBorder(true).SetTitle("| Mobius v" + hotline.VERSION + " |").SetTitleAlign(tview.AlignLeft)
+	home.Box.SetBorder(true).SetTitle("| Mobius Client|").SetTitleAlign(tview.AlignLeft)
 	mainMenu := tview.NewList()
 
 	bannerItem := tview.NewTextView().
@@ -560,62 +546,64 @@ func (ui *UI) Start() {
 	)
 
 	mainMenu.AddItem("Join Server", "", 'j', func() {
-		joinServerPage := ui.renderJoinServerForm("", "", hotline.GuestAccount, "", "home", false, false)
-		ui.Pages.AddPage("joinServer", joinServerPage, true, true)
+		joinServerPage := mhc.renderJoinServerForm("", "", hotline.GuestAccount, "", "home", false, false)
+		mhc.Pages.AddPage("joinServer", joinServerPage, true, true)
 	}).
 		AddItem("Bookmarks", "", 'b', func() {
-			ui.Pages.AddAndSwitchToPage("bookmarks", ui.showBookmarks(), true)
+			mhc.Pages.AddAndSwitchToPage("bookmarks", mhc.showBookmarks(), true)
 		}).
 		AddItem("Browse Tracker", "", 't', func() {
-			listing, err := hotline.GetListing(ui.Pref.Tracker)
+			conn, _ := net.DialTimeout("tcp", mhc.Pref.Tracker, 5*time.Second)
+
+			listing, err := hotline.GetListing(conn)
 			if err != nil {
 				errMsg := fmt.Sprintf("Error fetching tracker results:\n%v", err)
 				errModal := tview.NewModal()
 				errModal.SetText(errMsg)
 				errModal.AddButtons([]string{"Cancel"})
 				errModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-					ui.Pages.RemovePage("errModal")
+					mhc.Pages.RemovePage("errModal")
 				})
-				ui.Pages.RemovePage("joinServer")
-				ui.Pages.AddPage("errModal", errModal, false, true)
+				mhc.Pages.RemovePage("joinServer")
+				mhc.Pages.AddPage("errModal", errModal, false, true)
 				return
 			}
-			ui.trackerList = ui.getTrackerList(listing)
-			ui.Pages.AddAndSwitchToPage("trackerList", ui.trackerList, true)
+			mhc.trackerList = mhc.getTrackerList(listing)
+			mhc.Pages.AddAndSwitchToPage("trackerList", mhc.trackerList, true)
 		}).
 		AddItem("Settings", "", 's', func() {
-			ui.Pages.AddPage("settings", ui.renderSettingsForm(), true, true)
+			mhc.Pages.AddPage("settings", mhc.renderSettingsForm(), true, true)
 		}).
 		AddItem("Quit", "", 'q', func() {
-			ui.App.Stop()
+			mhc.App.Stop()
 		})
 
-	ui.Pages.AddPage("home", home, true, true)
+	mhc.Pages.AddPage("home", home, true, true)
 
 	// App level input capture
-	ui.App.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	mhc.App.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyCtrlC {
-			ui.HLClient.Logger.Info("Exiting")
-			ui.App.Stop()
+			mhc.HLClient.Logger.Info("Exiting")
+			mhc.App.Stop()
 			os.Exit(0)
 		}
 		// Show Logs
 		if event.Key() == tcell.KeyCtrlL {
-			ui.HLClient.DebugBuf.TextView.ScrollToEnd()
-			ui.HLClient.DebugBuf.TextView.SetBorder(true).SetTitle("Logs")
-			ui.HLClient.DebugBuf.TextView.SetDoneFunc(func(key tcell.Key) {
+			mhc.DebugBuffer.TextView.ScrollToEnd()
+			mhc.DebugBuffer.TextView.SetBorder(true).SetTitle("Logs")
+			mhc.DebugBuffer.TextView.SetDoneFunc(func(key tcell.Key) {
 				if key == tcell.KeyEscape {
-					ui.Pages.RemovePage("logs")
+					mhc.Pages.RemovePage("logs")
 				}
 			})
 
-			ui.Pages.AddPage("logs", ui.HLClient.DebugBuf.TextView, true, true)
+			mhc.Pages.AddPage("logs", mhc.DebugBuffer.TextView, true, true)
 		}
 		return event
 	})
 
-	if err := ui.App.SetRoot(ui.Pages, true).SetFocus(ui.Pages).Run(); err != nil {
-		ui.App.Stop()
+	if err := mhc.App.SetRoot(mhc.Pages, true).SetFocus(mhc.Pages).Run(); err != nil {
+		mhc.App.Stop()
 		os.Exit(1)
 	}
 }

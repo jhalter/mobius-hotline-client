@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"github.com/jhalter/mobius/hotline"
@@ -21,28 +20,29 @@ var logLevels = map[string]slog.Level{
 	"error": slog.LevelError,
 }
 
-func main() {
-	_, cancelRoot := context.WithCancel(context.Background())
+// Values swapped in by go-releaser at build time
+var (
+	version = "dev"
+)
 
+func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT, os.Interrupt)
 
 	configDir := flag.String("config", defaultConfigPath(), "Path to config root")
-	version := flag.Bool("version", false, "print version and exit")
+	showVersion := flag.Bool("version", false, "print version and exit")
 	logLevel := flag.String("log-level", "info", "Log level")
 	logFile := flag.String("log-file", "", "output logs to file")
 
 	flag.Parse()
 
-	if *version {
-		fmt.Printf("v%s\n", hotline.VERSION)
+	if *showVersion {
+		fmt.Printf("v%s\n", version)
 		os.Exit(0)
 	}
 
 	// init DebugBuffer
-	db := &ui.DebugBuffer{
-		TextView: tview.NewTextView(),
-	}
+	db := &ui.DebugBuffer{TextView: tview.NewTextView()}
 
 	// Add file logger if optional log-file flag was passed
 	if *logFile != "" {
@@ -55,32 +55,30 @@ func main() {
 	}
 
 	logger := slog.New(slog.NewTextHandler(db, &slog.HandlerOptions{Level: logLevels[*logLevel]}))
-	logger.Info("Started Mobius client", "Version", hotline.VERSION)
+	logger.Info("Started Mobius client", "Version", version)
 
 	go func() {
 		sig := <-sigChan
 		logger.Info("Stopping client", "signal", sig.String())
-		cancelRoot()
+		//cancelRoot()
 	}()
 
-	client := ui.NewUIClient(*configDir, logger)
-	client.DebugBuf = db
+	client := ui.NewUIClient(*configDir, logger, db)
 
 	// Register transaction handlers for transaction types that we should act on.
-	client.UI.HLClient.HandleFunc(hotline.TranChatMsg, client.HandleClientChatMsg)
-	client.UI.HLClient.HandleFunc(hotline.TranLogin, client.HandleClientTranLogin)
-	client.UI.HLClient.HandleFunc(hotline.TranShowAgreement, client.HandleClientTranShowAgreement)
-	client.UI.HLClient.HandleFunc(hotline.TranUserAccess, client.HandleClientTranUserAccess)
-	client.UI.HLClient.HandleFunc(hotline.TranGetUserNameList, client.HandleClientGetUserNameList)
-	client.UI.HLClient.HandleFunc(hotline.TranNotifyChangeUser, client.HandleNotifyChangeUser)
-	client.UI.HLClient.HandleFunc(hotline.TranNotifyChatDeleteUser, client.HandleNotifyDeleteUser)
-	client.UI.HLClient.HandleFunc(hotline.TranGetMsgs, client.TranGetMsgs)
-	client.UI.HLClient.HandleFunc(hotline.TranGetFileNameList, client.HandleGetFileNameList)
-	client.UI.HLClient.HandleFunc(hotline.TranServerMsg, client.HandleTranServerMsg)
+	client.HLClient.HandleFunc(hotline.TranChatMsg, client.HandleClientChatMsg)
+	client.HLClient.HandleFunc(hotline.TranLogin, client.HandleClientTranLogin)
+	client.HLClient.HandleFunc(hotline.TranShowAgreement, client.HandleClientTranShowAgreement)
+	client.HLClient.HandleFunc(hotline.TranUserAccess, client.HandleClientTranUserAccess)
+	client.HLClient.HandleFunc(hotline.TranGetUserNameList, client.HandleClientGetUserNameList)
+	client.HLClient.HandleFunc(hotline.TranNotifyChangeUser, client.HandleNotifyChangeUser)
+	client.HLClient.HandleFunc(hotline.TranNotifyChatDeleteUser, client.HandleNotifyDeleteUser)
+	client.HLClient.HandleFunc(hotline.TranGetMsgs, client.TranGetMsgs)
+	client.HLClient.HandleFunc(hotline.TranGetFileNameList, client.HandleGetFileNameList)
+	client.HLClient.HandleFunc(hotline.TranServerMsg, client.HandleTranServerMsg)
+	client.HLClient.HandleFunc(hotline.TranKeepAlive, client.HandleKeepAlive)
 
-	client.UI.HLClient.HandleFunc(hotline.TranKeepAlive, client.HandleKeepAlive)
-
-	client.UI.Start()
+	client.Start()
 }
 
 func defaultConfigPath() (cfgPath string) {
