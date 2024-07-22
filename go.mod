@@ -9,8 +9,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-replace github.com/jhalter/mobius => /Users/jhalter/repos/mobius
-
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gdamore/encoding v1.0.1 // indirect
