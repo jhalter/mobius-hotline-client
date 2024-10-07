@@ -12,7 +12,6 @@ Mobius Hotline Client is a cross-platform command line [Hotline](https://en.wiki
 | Feature                    | Done |
 |----------------------------|------|
 | Trackers listing           | ✓    |
-| Multiple trackers          |      |
 | Connect to servers         | ✓    |
 | Server accounts            | ✓    |
 | Server bookmarks           | ✓    |
@@ -20,20 +19,19 @@ Mobius Hotline Client is a cross-platform command line [Hotline](https://en.wiki
 | Display server agreement   | ✓    |
 | Public chat                | ✓    |
 | Private messages           | ~    |
-| User list                  | ✓    |
-| User administration        | ✓    |
-| News reading               | x    |
-| News posting               | x    |
+| User list                  |      |
+| User administration        |      |
+| News reading               |      |
+| News posting               |      |
 | Message board reading      | ✓    |
 | Message board posting      | ✓    |
 | File browsing              | ✓    |
-| File downloading           | x    |
+| File downloading           |      |
 | File uploading             |      |
-| File info                  | x    |
+| File info                  |      |
 | File management            |      |
 | Folder downloading         |      |
 | Folder uploading           |      |
-| Custom icon sets           |      |
 
 ## Screenshots 
 
