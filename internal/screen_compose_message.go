@@ -136,7 +136,7 @@ func (s *ComposeMessageScreen) View() string {
 	// Show quoted message if this is a reply
 	if s.quoteText != "" {
 		quotedStyle := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("241")).
+			Foreground(style.CurrentTheme.TextMuted).
 			Italic(true)
 		content.WriteString(quotedStyle.Render("> " + s.quoteText))
 		content.WriteString("\n\n")

@@ -22,7 +22,7 @@ type LoadingScreen struct {
 func NewLoadingScreen(message string, m *Model) (*LoadingScreen, tea.Cmd) {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
-	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#874BFD"))
+	s.Style = lipgloss.NewStyle().Foreground(style.CurrentTheme.DialogBorder)
 
 	screen := &LoadingScreen{
 		spinner: s,

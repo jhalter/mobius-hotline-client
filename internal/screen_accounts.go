@@ -328,14 +328,14 @@ func (s *AccountsScreen) renderSplitView() string {
 				prefix = "> "
 			}
 
-			style := lipgloss.NewStyle()
+			itemStyle := lipgloss.NewStyle()
 			if !canEdit {
-				style = style.Foreground(lipgloss.Color("240"))
+				itemStyle = itemStyle.Foreground(style.CurrentTheme.TextDisabled)
 			} else if focusIndex == s.focusedAccessBit {
-				style = style.Bold(true)
+				itemStyle = itemStyle.Bold(true)
 			}
 
-			rightContent.WriteString(style.Render(prefix + checkbox + " " + bit.name))
+			rightContent.WriteString(itemStyle.Render(prefix + checkbox + " " + bit.name))
 			rightContent.WriteString("\n")
 
 			focusIndex++

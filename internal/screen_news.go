@@ -512,7 +512,7 @@ func (s *NewsScreen) renderSplitView() string {
 	// Build top half (article list)
 	articleList := lipgloss.NewStyle().
 		Border(lipgloss.NormalBorder(), false, true, false, false).
-		BorderForeground(lipgloss.Color("62")).
+		BorderForeground(style.CurrentTheme.BorderPrimary).
 		Render(s.list.View())
 
 	// Build bottom half (article content)

@@ -16,6 +16,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/jhalter/mobius-hotline-client/internal/style"
 	"github.com/jhalter/mobius/hotline"
 	"gopkg.in/yaml.v3"
 )
@@ -252,6 +253,9 @@ func NewModel(cfgPath string, logger *slog.Logger, db *DebugBuffer) *Model {
 		logger.Error(fmt.Sprintf("unable to read config file %s\n", cfgPath))
 		os.Exit(1)
 	}
+
+	// Apply saved theme (defaults to Classic if not set)
+	style.SetTheme(style.GetThemeByName(prefs.Theme))
 
 	hlClient := hotline.NewClient(prefs.Username, logger)
 

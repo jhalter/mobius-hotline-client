@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/jhalter/mobius-hotline-client/internal/style"
 	"github.com/jhalter/mobius/hotline"
 )
 
@@ -131,7 +132,7 @@ func (m *Model) HandleNotifyChangeUser(ctx context.Context, c *hotline.Client, t
 			m.soundPlayer.PlayAsync(SoundUserJoin)
 		}
 		// Send join message to chat
-		joinStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("241"))
+		joinStyle := lipgloss.NewStyle().Bold(true).Foreground(style.CurrentTheme.TextMuted)
 		m.program.Send(chatMsg{text: joinStyle.Render(fmt.Sprintf("→ %s joined", newUser.Name))})
 	}
 
@@ -162,7 +163,7 @@ func (m *Model) HandleNotifyDeleteUser(ctx context.Context, c *hotline.Client, t
 
 	// Send leave message to chat
 	if leavingUsername != "" {
-		leaveStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("241"))
+		leaveStyle := lipgloss.NewStyle().Bold(true).Foreground(style.CurrentTheme.TextMuted)
 		m.program.Send(chatMsg{text: leaveStyle.Render(fmt.Sprintf("← %s left", leavingUsername))})
 	}
 

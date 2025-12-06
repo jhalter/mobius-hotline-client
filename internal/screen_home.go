@@ -90,7 +90,7 @@ func (s *HomeScreen) View() string {
 				lipgloss.NewStyle().
 					Foreground(style.ColorBrightRed).
 					Bold(true).
-					Render(style.ApplyBoldForegroundGrad(s.welcomeBanner, style.ColorBrightRed, lipgloss.Color("#BF281B"))),
+					Render(style.ApplyBoldForegroundGrad(s.welcomeBanner, style.CurrentTheme.GradientStart, style.CurrentTheme.GradientEnd)),
 				strings.Join(
 					[]string{
 						fmt.Sprintf("%s Join Server", style.HotkeyStyle.Render("(j)")),

@@ -114,7 +114,7 @@ func (s *TasksScreen) View() string {
 			b.WriteString("\n\n")
 		}
 	} else {
-		mutedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
+		mutedStyle := lipgloss.NewStyle().Foreground(style.CurrentTheme.TextMuted)
 		b.WriteString(mutedStyle.Render("No active downloads"))
 		b.WriteString("\n\n")
 	}
@@ -205,7 +205,7 @@ func (s *TasksScreen) renderTask(task *Task) string {
 		eta = "--:--"
 	}
 
-	mutedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
+	mutedStyle := lipgloss.NewStyle().Foreground(style.CurrentTheme.TextMuted)
 	stats := fmt.Sprintf("%d%% • %s / %s • %s • ETA: %s", pct, transferred, total, speed, eta)
 	b.WriteString(mutedStyle.Render(stats))
 
@@ -216,9 +216,9 @@ func (s *TasksScreen) renderTask(task *Task) string {
 func (s *TasksScreen) renderCompletedTask(task *Task) string {
 	var icon, status string
 
-	successStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("2"))
-	errorStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
-	mutedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
+	successStyle := lipgloss.NewStyle().Foreground(style.CurrentTheme.Success)
+	errorStyle := lipgloss.NewStyle().Foreground(style.CurrentTheme.Error)
+	mutedStyle := lipgloss.NewStyle().Foreground(style.CurrentTheme.TextMuted)
 
 	if task.Status == TaskCompleted {
 		icon = successStyle.Render("✓")

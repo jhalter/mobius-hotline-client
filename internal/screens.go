@@ -45,7 +45,7 @@ func (m *Model) renderTaskWidget() string {
 	if len(displayTasks) == 0 {
 		// Empty state
 		emptyMsg := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("241")).
+			Foreground(style.CurrentTheme.TextMuted).
 			Render("No transfers")
 		content.WriteString(emptyMsg)
 	} else {
@@ -83,7 +83,7 @@ func (m *Model) renderCompactTask(task *Task) string {
 	case TaskFailed:
 		statusStr = style.TaskFailedStyle.Render("Fail")
 	case TaskPending:
-		statusStr = lipgloss.NewStyle().Foreground(style.ColorDarkGrey).Render("Wait")
+		statusStr = lipgloss.NewStyle().Foreground(style.ColorGrey3).Render("Wait")
 	}
 
 	line1 := fmt.Sprintf("%-18s %4s", fileName, statusStr)
@@ -100,7 +100,7 @@ func (m *Model) renderCompactTask(task *Task) string {
 	if task.Status == TaskActive && task.Speed > 0 {
 		speedStr := formatSpeed(task.Speed)
 		lines = append(lines, lipgloss.NewStyle().
-			Foreground(style.ColorDarkGrey).
+			Foreground(style.ColorGrey3).
 			Render(speedStr))
 	}
 

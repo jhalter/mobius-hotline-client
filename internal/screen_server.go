@@ -239,7 +239,7 @@ func (s *ServerScreen) View() string {
 
 		// Change to grey when in scrollback mode (not at bottom)
 		if !s.chatViewport.AtBottom() {
-			chatBorderColor = style.ColorLightGrey
+			chatBorderColor = style.ColorGrey3
 		}
 	}
 
