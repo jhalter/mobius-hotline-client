@@ -1,8 +1,23 @@
 package internal
 
-import "github.com/jhalter/mobius/hotline"
+import (
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/jhalter/mobius/hotline"
+)
 
 // Internal message types for BubbleTea communication
+
+// SessionMsg wraps any tea.Msg with the originating session ID
+// Used to route messages from server connections to the correct session
+type SessionMsg struct {
+	SessionID string
+	Msg       tea.Msg
+}
+
+// disconnectSessionMsg is sent when a specific session disconnects
+type disconnectSessionMsg struct {
+	sessionID string
+}
 
 type chatMsg struct {
 	text string

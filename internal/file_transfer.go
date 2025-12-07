@@ -15,7 +15,7 @@ import (
 	"github.com/jhalter/mobius/hotline"
 )
 
-func (m *Model) performFileTransfer(task *Task, refNum [4]byte, transferSize uint32) {
+func (m *Model) performFileTransfer(session *ServerSession, task *Task, refNum [4]byte, transferSize uint32) {
 	defer func() {
 		if task.Status == TaskActive {
 			task.Status = TaskCompleted
@@ -28,8 +28,8 @@ func (m *Model) performFileTransfer(task *Task, refNum [4]byte, transferSize uin
 		})
 	}()
 
-	// Get server address from hlClient
-	serverAddr := m.hlClient.Connection.RemoteAddr().String()
+	// Get server address from session's hlClient
+	serverAddr := session.hlClient.Connection.RemoteAddr().String()
 	host, port, _ := net.SplitHostPort(serverAddr)
 	portInt, _ := strconv.Atoi(port)
 	ftAddr := net.JoinHostPort(host, strconv.Itoa(portInt+1))
@@ -298,7 +298,7 @@ func (m *Model) writeAppleDoubleHeader(w io.Writer, resourceForkSize uint32) err
 }
 
 // performFileUpload handles the entire file upload process
-func (m *Model) performFileUpload(task *Task, refNum [4]byte) {
+func (m *Model) performFileUpload(session *ServerSession, task *Task, refNum [4]byte) {
 	defer func() {
 		if task.Status == TaskActive {
 			task.Status = TaskCompleted
@@ -356,7 +356,7 @@ func (m *Model) performFileUpload(task *Task, refNum [4]byte) {
 	}
 
 	// Connect to file transfer port (server port + 1)
-	serverAddr := m.hlClient.Connection.RemoteAddr().String()
+	serverAddr := session.hlClient.Connection.RemoteAddr().String()
 	host, port, _ := net.SplitHostPort(serverAddr)
 	portInt, _ := strconv.Atoi(port)
 	ftAddr := net.JoinHostPort(host, strconv.Itoa(portInt+1))

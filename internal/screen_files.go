@@ -279,10 +279,14 @@ func (s *FilesScreen) InitiateDownload(fileName string, filePath []string) tea.C
 			t.Fields = append(t.Fields, hotline.NewField(hotline.FieldFilePath, hotline.EncodeFilePath(pathStr)))
 		}
 
-		// Map transaction ID to task ID
-		s.model.pendingDownloads[t.ID] = taskID
+		// Map transaction ID to task ID (on the active session)
+		session := s.model.activeSession()
+		if session == nil {
+			return errorMsg{text: "No active server connection"}
+		}
+		session.pendingDownloads[t.ID] = taskID
 
-		if err := s.model.hlClient.Send(t); err != nil {
+		if err := session.hlClient.Send(t); err != nil {
 			s.model.logger.Error("Error sending download transaction", "err", err)
 		}
 

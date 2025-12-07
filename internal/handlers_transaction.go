@@ -102,6 +102,12 @@ func (m *Model) TranGetMsgs(ctx context.Context, c *hotline.Client, t *hotline.T
 }
 
 func (m *Model) HandleNotifyChangeUser(ctx context.Context, c *hotline.Client, t *hotline.Transaction) (res []hotline.Transaction, err error) {
+	sessionID := getSessionIDFromContext(ctx)
+	session := m.getSessionByID(sessionID)
+	if session == nil {
+		return nil, nil
+	}
+
 	newUser := hotline.User{
 		ID:    [2]byte(t.GetField(hotline.FieldUserID).Data),
 		Name:  string(t.GetField(hotline.FieldUserName).Data),
@@ -113,7 +119,7 @@ func (m *Model) HandleNotifyChangeUser(ctx context.Context, c *hotline.Client, t
 	var newUserList []hotline.User
 	updatedUser := false
 
-	for _, u := range m.userList {
+	for _, u := range session.userList {
 		if newUser.ID == u.ID {
 			oldName = u.Name
 			if u.Name != newUser.Name {
@@ -143,12 +149,18 @@ func (m *Model) HandleNotifyChangeUser(ctx context.Context, c *hotline.Client, t
 }
 
 func (m *Model) HandleNotifyDeleteUser(ctx context.Context, c *hotline.Client, t *hotline.Transaction) (res []hotline.Transaction, err error) {
+	sessionID := getSessionIDFromContext(ctx)
+	session := m.getSessionByID(sessionID)
+	if session == nil {
+		return nil, nil
+	}
+
 	exitUser := t.GetField(hotline.FieldUserID).Data
 
 	// Find the username before removing
 	var leavingUsername string
 	var newUserList []hotline.User
-	for _, u := range m.userList {
+	for _, u := range session.userList {
 		if !bytes.Equal(exitUser, u.ID[:]) {
 			newUserList = append(newUserList, u)
 		} else {
@@ -219,15 +231,21 @@ func (m *Model) HandleClientTranUserAccess(ctx context.Context, c *hotline.Clien
 		return nil, nil
 	}
 
-	copy(m.userAccess[:], t.GetField(hotline.FieldUserAccess).Data)
-	m.logger.Debug("Permissions", "bits", fmt.Sprintf("%b", m.userAccess))
+	sessionID := getSessionIDFromContext(ctx)
+	session := m.getSessionByID(sessionID)
+	if session == nil {
+		return nil, nil
+	}
+
+	copy(session.userAccess[:], t.GetField(hotline.FieldUserAccess).Data)
+	m.logger.Debug("Permissions", "bits", fmt.Sprintf("%b", session.userAccess))
 
 	// Enable/disable keybinding depending on access.
-	if m.serverScreen != nil {
-		m.serverScreen.SetUserAccess(m.userAccess)
+	if session.serverScreen != nil {
+		session.serverScreen.SetUserAccess(session.userAccess)
 	}
-	if m.messageBoardScreen != nil {
-		m.messageBoardScreen.SetUserAccess(m.userAccess)
+	if session.messageBoardScreen != nil {
+		session.messageBoardScreen.SetUserAccess(session.userAccess)
 	}
 
 	return res, err

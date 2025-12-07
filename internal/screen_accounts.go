@@ -710,7 +710,11 @@ func (m *Model) submitAccountChanges(msg AccountsSaveMsg) tea.Cmd {
 		}
 
 		// Send transaction
-		if err := m.hlClient.Send(hotline.NewTransaction(
+		session := m.activeSession()
+		if session == nil {
+			return errorMsg{text: "No active server connection"}
+		}
+		if err := session.hlClient.Send(hotline.NewTransaction(
 			hotline.TranUpdateUser,
 			[2]byte{},
 			hotline.NewField(hotline.FieldData, fieldData),
@@ -728,10 +732,14 @@ func (m *Model) submitAccountChanges(msg AccountsSaveMsg) tea.Cmd {
 // deleteAccount deletes the specified account from the server
 func (m *Model) deleteAccount(login string) tea.Cmd {
 	return func() tea.Msg {
+		session := m.activeSession()
+		if session == nil {
+			return errorMsg{text: "No active server connection"}
+		}
 		// For delete, send only FieldData with the login
 		loginData := hotline.EncodeString([]byte(login))
 
-		if err := m.hlClient.Send(hotline.NewTransaction(
+		if err := session.hlClient.Send(hotline.NewTransaction(
 			hotline.TranUpdateUser,
 			[2]byte{},
 			hotline.NewField(hotline.FieldData, loginData),

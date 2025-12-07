@@ -33,6 +33,7 @@ func (m *Model) handleWindowResize(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) resizeAllScreens(w, h int) {
+	// Resize global/pre-connection screens
 	if m.homeScreen != nil {
 		m.homeScreen.SetSize(w, h)
 	}
@@ -48,51 +49,34 @@ func (m *Model) resizeAllScreens(w, h int) {
 	if m.settingsScreen != nil {
 		m.settingsScreen.SetSize(w, h)
 	}
-	if m.serverScreen != nil {
-		m.serverScreen.SetSize(w, h)
-	}
-	if m.newsScreen != nil {
-		m.newsScreen.SetSize(w, h)
-	}
-	if m.newsArticlePostScreen != nil {
-		m.newsArticlePostScreen.SetSize(w, h)
-	}
-	if m.newsBundleFormScreen != nil {
-		m.newsBundleFormScreen.SetSize(w, h)
-	}
-	if m.newsCategoryFormScreen != nil {
-		m.newsCategoryFormScreen.SetSize(w, h)
-	}
-	if m.legacyNewsPostScreen != nil {
-		m.legacyNewsPostScreen.SetSize(w, h)
-	}
-	if m.accountsScreen != nil {
-		m.accountsScreen.SetSize(w, h)
-	}
-	if m.filesScreen != nil {
-		m.filesScreen.SetSize(w, h)
-	}
 	if m.tasksScreen != nil {
 		m.tasksScreen.SetSize(w, h)
 	}
 	if m.logsScreen != nil {
 		m.logsScreen.SetSize(w, h)
 	}
-	if m.messageBoardScreen != nil {
-		m.messageBoardScreen.SetSize(w, h)
-	}
 	if m.filePickerScreen != nil {
 		m.filePickerScreen.SetSize(w, h)
-	}
-	if m.composeMessageScreen != nil {
-		m.composeMessageScreen.SetSize(w, h)
 	}
 	if m.modalScreen != nil {
 		m.modalScreen.SetSize(w, h)
 	}
+	if m.loadingScreen != nil {
+		m.loadingScreen.SetSize(w, h)
+	}
+
+	// Resize all session-specific screens
+	for _, session := range m.sessions {
+		session.resizeAllScreens(w, h)
+	}
 }
 
 func (m *Model) handleChatMsgfunc(msg tea.Msg) (tea.Model, tea.Cmd) {
+	session := m.activeSession()
+	if session == nil {
+		return m, nil
+	}
+
 	chatMessage := msg.(chatMsg)
 
 	// Use regex to extract username (everything up to and including first colon)
@@ -106,28 +90,37 @@ func (m *Model) handleChatMsgfunc(msg tea.Msg) (tea.Model, tea.Cmd) {
 	formattedMsg = style.UsernameStyle.Render(match) + message
 
 	// Add to server screen if it exists
-	if m.serverScreen != nil {
-		m.serverScreen.AddChatMessage(formattedMsg)
+	if session.serverScreen != nil {
+		session.serverScreen.AddChatMessage(formattedMsg)
 	}
 
 	return m, nil
 }
 
 func (m *Model) handleUserListMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
+	session := m.activeSession()
+	if session == nil {
+		return m, nil
+	}
+
 	userListMessage := msg.(userListMsg)
-	m.userList = userListMessage.users
+	session.userList = userListMessage.users
 
 	// Update server screen if it exists
-	if m.serverScreen != nil {
-		m.serverScreen.SetUserList(userListMessage.users)
+	if session.serverScreen != nil {
+		session.serverScreen.SetUserList(userListMessage.users)
 	}
 
 	return m, nil
 }
 
 func (m *Model) handleMessageBoardMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
+	session := m.activeSession()
+	if session == nil {
+		return m, nil
+	}
 	messageBoardMessage := msg.(messageBoardMsg)
-	m.messageBoardScreen = NewMessageBoardScreen(messageBoardMessage.text, m)
+	session.messageBoardScreen = NewMessageBoardScreen(messageBoardMessage.text, m)
 	m.PushScreen(ScreenMessageBoard)
 	return m, nil
 }
@@ -146,6 +139,11 @@ func (m *Model) handleErrorMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) handleServerMsgMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
+	session := m.activeSession()
+	if session == nil {
+		return m, nil
+	}
+
 	serverMessage := msg.(serverMsgMsg)
 
 	// Add to private message stack
@@ -155,7 +153,7 @@ func (m *Model) handleServerMsgMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 		Text:   serverMessage.text,
 		Time:   serverMessage.time,
 	}
-	m.privateMessages = append(m.privateMessages, pm)
+	session.privateMessages = append(session.privateMessages, pm)
 
 	// Update or create the PM modal
 	m.updatePrivateMessageModal()
@@ -191,14 +189,20 @@ func (m *Model) handleServerConnectedMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.PopScreen()
 	}
 
-	serverConnected := msg.(serverConnectedMsg)
-	m.serverName = serverConnected.name
+	session := m.activeSession()
+	if session == nil {
+		return m, nil
+	}
 
-	// Create and initialize ServerScreen
-	m.serverScreen = NewServerScreen(m)
-	m.serverScreen.SetServerName(serverConnected.name)
-	m.serverScreen.SetSize(m.width, m.height)
-	m.serverScreen.FocusChatInput()
+	serverConnected := msg.(serverConnectedMsg)
+	session.serverName = serverConnected.name
+	session.DisplayName = serverConnected.name
+
+	// Create and initialize ServerScreen for this session
+	session.serverScreen = NewServerScreen(m)
+	session.serverScreen.SetServerName(serverConnected.name)
+	session.serverScreen.SetSize(m.width, m.height)
+	session.serverScreen.FocusChatInput()
 
 	m.NavigateTo(ScreenServerUI)
 	m.soundPlayer.PlayAsync(SoundLoggedIn)
@@ -206,7 +210,7 @@ func (m *Model) handleServerConnectedMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Add initial join message to chat viewport
 	joinStyle := lipgloss.NewStyle().Bold(true).Foreground(style.CurrentTheme.TextMuted)
 	joinMsg := joinStyle.Render(fmt.Sprintf("→ %s joined", m.prefs.Username))
-	m.serverScreen.AddChatMessage(joinMsg)
+	session.serverScreen.AddChatMessage(joinMsg)
 
 	return m, nil
 }
@@ -426,15 +430,19 @@ func (m *Model) handleBookmarkDeletedMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) handleFilesMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
+	session := m.activeSession()
+	if session == nil {
+		return m, nil
+	}
 	filesMessage := msg.(filesMsg)
 
 	// Create screen if needed
-	if m.filesScreen == nil {
-		m.filesScreen = NewFilesScreen(m)
+	if session.filesScreen == nil {
+		session.filesScreen = NewFilesScreen(m)
 	}
 
 	// Update files in screen
-	m.filesScreen.SetFiles(filesMessage.files)
+	session.filesScreen.SetFiles(filesMessage.files)
 
 	// Only push if not already in Files screen
 	// This preserves the correct screen to return to when closing Files
@@ -445,11 +453,15 @@ func (m *Model) handleFilesMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) handleNewsCategoriesMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
-	newsCategoriesMessage := msg.(newsCategoriesMsg)
-	if m.newsScreen == nil {
-		m.newsScreen = NewNewsScreen(m)
+	session := m.activeSession()
+	if session == nil {
+		return m, nil
 	}
-	m.newsScreen.SetCategories(newsCategoriesMessage.categories)
+	newsCategoriesMessage := msg.(newsCategoriesMsg)
+	if session.newsScreen == nil {
+		session.newsScreen = NewNewsScreen(m)
+	}
+	session.newsScreen.SetCategories(newsCategoriesMessage.categories)
 	if m.CurrentScreen() != ScreenNews {
 		m.PushScreen(ScreenNews)
 	}
@@ -457,11 +469,15 @@ func (m *Model) handleNewsCategoriesMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) handleNewsArticlesMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
-	newsArticlesMessage := msg.(newsArticlesMsg)
-	if m.newsScreen == nil {
-		m.newsScreen = NewNewsScreen(m)
+	session := m.activeSession()
+	if session == nil {
+		return m, nil
 	}
-	m.newsScreen.SetArticles(newsArticlesMessage.articles)
+	newsArticlesMessage := msg.(newsArticlesMsg)
+	if session.newsScreen == nil {
+		session.newsScreen = NewNewsScreen(m)
+	}
+	session.newsScreen.SetArticles(newsArticlesMessage.articles)
 	if m.CurrentScreen() != ScreenNews {
 		m.PushScreen(ScreenNews)
 	}
@@ -469,16 +485,24 @@ func (m *Model) handleNewsArticlesMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) handleNewsArticleDataMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
+	session := m.activeSession()
+	if session == nil {
+		return m, nil
+	}
 	newsArticleData := msg.(newsArticleDataMsg)
-	if m.newsScreen != nil {
-		m.newsScreen.SetArticleData(newsArticleData.article)
+	if session.newsScreen != nil {
+		session.newsScreen.SetArticleData(newsArticleData.article)
 	}
 	return m, nil
 }
 
 func (m *Model) handleNewsNavigateToCategoryMsg(msg NewsNavigateToCategoryMsg) {
+	session := m.activeSession()
+	if session == nil {
+		return
+	}
 	pathBytes := encodeNewsPath(msg.Path)
-	if err := m.hlClient.Send(hotline.NewTransaction(
+	if err := session.hlClient.Send(hotline.NewTransaction(
 		hotline.TranGetNewsArtNameList,
 		[2]byte{},
 		hotline.NewField(hotline.FieldNewsPath, pathBytes),
@@ -488,23 +512,31 @@ func (m *Model) handleNewsNavigateToCategoryMsg(msg NewsNavigateToCategoryMsg) {
 }
 
 func (m *Model) handleNewsNavigateToBundleMsg(msg NewsNavigateToBundleMsg) {
+	session := m.activeSession()
+	if session == nil {
+		return
+	}
 	var fields []hotline.Field
 	if len(msg.Path) > 0 {
 		pathBytes := encodeNewsPath(msg.Path)
 		fields = append(fields, hotline.NewField(hotline.FieldNewsPath, pathBytes))
 	}
-	if err := m.hlClient.Send(hotline.NewTransaction(hotline.TranGetNewsCatNameList, [2]byte{}, fields...)); err != nil {
+	if err := session.hlClient.Send(hotline.NewTransaction(hotline.TranGetNewsCatNameList, [2]byte{}, fields...)); err != nil {
 		m.logger.Error("Error requesting news categories", "err", err)
 	}
 }
 
 func (m *Model) handleNewsRequestArticleMsg(msg NewsRequestArticleMsg) {
+	session := m.activeSession()
+	if session == nil {
+		return
+	}
 	pathBytes := encodeNewsPath(msg.Path)
 
 	articleIDBytes := make([]byte, 4)
 	binary.BigEndian.PutUint32(articleIDBytes, msg.ArticleID)
 
-	if err := m.hlClient.Send(hotline.NewTransaction(
+	if err := session.hlClient.Send(hotline.NewTransaction(
 		hotline.TranGetNewsArtData,
 		[2]byte{},
 		hotline.NewField(hotline.FieldNewsPath, pathBytes),
@@ -515,22 +547,34 @@ func (m *Model) handleNewsRequestArticleMsg(msg NewsRequestArticleMsg) {
 }
 
 func (m *Model) handleNewsPostArticleMsg(msg NewsPostArticleMsg) tea.Cmd {
-	screen, cmd := NewNewsArticlePostScreen(m.newsScreen.GetPath(), msg.ParentID, msg.Subject, m)
-	m.newsArticlePostScreen = screen
+	session := m.activeSession()
+	if session == nil {
+		return nil
+	}
+	screen, cmd := NewNewsArticlePostScreen(session.newsScreen.GetPath(), msg.ParentID, msg.Subject, m)
+	session.newsArticlePostScreen = screen
 	m.PushScreen(ScreenNewsArticlePost)
 	return cmd
 }
 
 func (m *Model) handleNewsCreateBundleMsg() tea.Cmd {
-	screen, cmd := NewNewsBundleFormScreen(m.newsScreen.GetPath(), m)
-	m.newsBundleFormScreen = screen
+	session := m.activeSession()
+	if session == nil {
+		return nil
+	}
+	screen, cmd := NewNewsBundleFormScreen(session.newsScreen.GetPath(), m)
+	session.newsBundleFormScreen = screen
 	m.PushScreen(ScreenNewsBundleForm)
 	return cmd
 }
 
 func (m *Model) handleNewsCreateCategoryMsg() tea.Cmd {
-	screen, cmd := NewNewsCategoryFormScreen(m.newsScreen.GetPath(), m)
-	m.newsCategoryFormScreen = screen
+	session := m.activeSession()
+	if session == nil {
+		return nil
+	}
+	screen, cmd := NewNewsCategoryFormScreen(session.newsScreen.GetPath(), m)
+	session.newsCategoryFormScreen = screen
 	m.PushScreen(ScreenNewsCategoryForm)
 	return cmd
 }
@@ -573,8 +617,12 @@ func (m *Model) handleFileInfoMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) handleAccountListMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
+	session := m.activeSession()
+	if session == nil {
+		return m, nil
+	}
 	accountListMessage := msg.(accountListMsg)
-	m.accountsScreen = NewAccountsScreen(accountListMessage.accounts, m.userAccess, m)
+	session.accountsScreen = NewAccountsScreen(accountListMessage.accounts, session.userAccess, m)
 	m.PushScreen(ScreenAccounts)
 	return m, nil
 }
@@ -638,9 +686,13 @@ func (m *Model) handleTaskStatusMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) handleDownloadReplyMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
+	session := m.activeSession()
+	if session == nil {
+		return m, nil
+	}
 	downloadReply := msg.(downloadReplyMsg)
-	taskID := m.pendingDownloads[downloadReply.txID]
-	delete(m.pendingDownloads, downloadReply.txID)
+	taskID := session.pendingDownloads[downloadReply.txID]
+	delete(session.pendingDownloads, downloadReply.txID)
 
 	task := m.taskManager.Get(taskID)
 	if task != nil {
@@ -648,18 +700,22 @@ func (m *Model) handleDownloadReplyMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 		task.Status = TaskActive
 
 		// Launch file transfer in background
-		go m.performFileTransfer(task, downloadReply.refNum, downloadReply.transferSize)
+		go m.performFileTransfer(session, task, downloadReply.refNum, downloadReply.transferSize)
 	}
 	return m, nil
 }
 
 func (m *Model) handleUploadReplyMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
+	session := m.activeSession()
+	if session == nil {
+		return m, nil
+	}
 	uploadReply := msg.(uploadReplyMsg)
-	taskID, ok := m.pendingUploads[uploadReply.txID]
+	taskID, ok := session.pendingUploads[uploadReply.txID]
 	if !ok {
 		return m, nil
 	}
-	delete(m.pendingUploads, uploadReply.txID)
+	delete(session.pendingUploads, uploadReply.txID)
 
 	task := m.taskManager.Get(taskID)
 	if task == nil {
@@ -669,7 +725,7 @@ func (m *Model) handleUploadReplyMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 	task.Status = TaskActive
 
 	// Start file transfer in goroutine
-	go m.performFileUpload(task, uploadReply.refNum)
+	go m.performFileUpload(session, task, uploadReply.refNum)
 
 	return m, nil
 }
@@ -677,6 +733,10 @@ func (m *Model) handleUploadReplyMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 // News form screen handlers
 
 func (m *Model) handleNewsArticlePostedMsg(msg NewsArticlePostedMsg) {
+	session := m.activeSession()
+	if session == nil {
+		return
+	}
 	// Create transaction with all required fields
 	pathBytes := encodeNewsPath(msg.Path)
 
@@ -693,15 +753,15 @@ func (m *Model) handleNewsArticlePostedMsg(msg NewsArticlePostedMsg) {
 		hotline.NewField(hotline.FieldNewsArtData, []byte(msg.Body)),
 	)
 
-	if err := m.hlClient.Send(t); err != nil {
+	if err := session.hlClient.Send(t); err != nil {
 		m.logger.Error("Error posting news article", "err", err)
 	}
 
 	m.PopScreen()
 
 	// Refetch the article list to show the new post
-	refetchPathBytes := encodeNewsPath(m.newsScreen.GetPath())
-	if err := m.hlClient.Send(hotline.NewTransaction(
+	refetchPathBytes := encodeNewsPath(session.newsScreen.GetPath())
+	if err := session.hlClient.Send(hotline.NewTransaction(
 		hotline.TranGetNewsArtNameList,
 		[2]byte{},
 		hotline.NewField(hotline.FieldNewsPath, refetchPathBytes),
@@ -711,6 +771,10 @@ func (m *Model) handleNewsArticlePostedMsg(msg NewsArticlePostedMsg) {
 }
 
 func (m *Model) handleNewsBundleCreatedMsg(msg NewsBundleCreatedMsg) {
+	session := m.activeSession()
+	if session == nil {
+		return
+	}
 	// Create bundle at current location
 	pathBytes := encodeNewsPath(msg.Path)
 
@@ -721,15 +785,15 @@ func (m *Model) handleNewsBundleCreatedMsg(msg NewsBundleCreatedMsg) {
 		hotline.NewField(hotline.FieldFileName, []byte(msg.Name)),
 	)
 
-	if err := m.hlClient.Send(t); err != nil {
+	if err := session.hlClient.Send(t); err != nil {
 		m.logger.Error("Error creating news bundle", "err", err)
 	}
 
 	m.PopScreen()
 
 	// Refetch current location
-	refetchPathBytes := encodeNewsPath(m.newsScreen.GetPath())
-	if err := m.hlClient.Send(hotline.NewTransaction(
+	refetchPathBytes := encodeNewsPath(session.newsScreen.GetPath())
+	if err := session.hlClient.Send(hotline.NewTransaction(
 		hotline.TranGetNewsCatNameList,
 		[2]byte{},
 		hotline.NewField(hotline.FieldNewsPath, refetchPathBytes),
@@ -739,6 +803,10 @@ func (m *Model) handleNewsBundleCreatedMsg(msg NewsBundleCreatedMsg) {
 }
 
 func (m *Model) handleNewsCategoryCreatedMsg(msg NewsCategoryCreatedMsg) {
+	session := m.activeSession()
+	if session == nil {
+		return
+	}
 	// Create category at current location
 	pathBytes := encodeNewsPath(msg.Path)
 
@@ -749,15 +817,15 @@ func (m *Model) handleNewsCategoryCreatedMsg(msg NewsCategoryCreatedMsg) {
 		hotline.NewField(hotline.FieldNewsCatName, []byte(msg.Name)),
 	)
 
-	if err := m.hlClient.Send(t); err != nil {
+	if err := session.hlClient.Send(t); err != nil {
 		m.logger.Error("Error creating news category", "err", err)
 	}
 
 	m.PopScreen()
 
 	// Refetch current location
-	refetchPathBytes := encodeNewsPath(m.newsScreen.GetPath())
-	if err := m.hlClient.Send(hotline.NewTransaction(
+	refetchPathBytes := encodeNewsPath(session.newsScreen.GetPath())
+	if err := session.hlClient.Send(hotline.NewTransaction(
 		hotline.TranGetNewsCatNameList,
 		[2]byte{},
 		hotline.NewField(hotline.FieldNewsPath, refetchPathBytes),
@@ -767,6 +835,10 @@ func (m *Model) handleNewsCategoryCreatedMsg(msg NewsCategoryCreatedMsg) {
 }
 
 func (m *Model) handleLegacyNewsPostedMsg(msg LegacyNewsPostedMsg) {
+	session := m.activeSession()
+	if session == nil {
+		return
+	}
 	// Create and send the transaction
 	t := hotline.NewTransaction(
 		hotline.TranOldPostNews,
@@ -774,12 +846,12 @@ func (m *Model) handleLegacyNewsPostedMsg(msg LegacyNewsPostedMsg) {
 		hotline.NewField(hotline.FieldData, []byte(msg.Content)),
 	)
 
-	if err := m.hlClient.Send(t); err != nil {
+	if err := session.hlClient.Send(t); err != nil {
 		m.logger.Error("Error posting news", "err", err)
 	}
 
 	// Refresh the messageboard content
-	if err := m.hlClient.Send(hotline.NewTransaction(hotline.TranGetMsgs, [2]byte{})); err != nil {
+	if err := session.hlClient.Send(hotline.NewTransaction(hotline.TranGetMsgs, [2]byte{})); err != nil {
 		m.logger.Error("Error refreshing messageboard", "err", err)
 	}
 
@@ -795,47 +867,71 @@ func (m *Model) handleServerDisconnectRequestedMsg() tea.Cmd {
 }
 
 func (m *Model) handleServerSendChatMsg(msg ServerSendChatMsg) {
+	session := m.activeSession()
+	if session == nil {
+		return
+	}
 	t := hotline.NewTransaction(hotline.TranChatSend, [2]byte{},
 		hotline.NewField(hotline.FieldData, []byte(msg.Text)),
 	)
-	_ = m.hlClient.Send(t)
+	_ = session.hlClient.Send(t)
 }
 
 func (m *Model) handleServerOpenNewsMsg() {
+	session := m.activeSession()
+	if session == nil {
+		return
+	}
 	// Request threaded news - create fresh screen (handler will initialize when response arrives)
-	m.newsScreen = NewNewsScreen(m)
-	if err := m.hlClient.Send(hotline.NewTransaction(hotline.TranGetNewsCatNameList, [2]byte{})); err != nil {
+	session.newsScreen = NewNewsScreen(m)
+	if err := session.hlClient.Send(hotline.NewTransaction(hotline.TranGetNewsCatNameList, [2]byte{})); err != nil {
 		m.logger.Error("Error requesting news categories", "err", err)
 	}
 }
 
 func (m *Model) handleServerOpenMessageBoardMsg() {
+	session := m.activeSession()
+	if session == nil {
+		return
+	}
 	// Request messageboard
-	if err := m.hlClient.Send(hotline.NewTransaction(hotline.TranGetMsgs, [2]byte{})); err != nil {
+	if err := session.hlClient.Send(hotline.NewTransaction(hotline.TranGetMsgs, [2]byte{})); err != nil {
 		m.logger.Error("Error requesting messageboard", "err", err)
 	}
 }
 
 func (m *Model) handleServerOpenFilesMsg() {
+	session := m.activeSession()
+	if session == nil {
+		return
+	}
 	// Create fresh files screen
-	m.filesScreen = NewFilesScreen(m)
+	session.filesScreen = NewFilesScreen(m)
 	// Request file list (handler will push screen when response arrives)
-	if err := m.hlClient.Send(hotline.NewTransaction(hotline.TranGetFileNameList, [2]byte{})); err != nil {
+	if err := session.hlClient.Send(hotline.NewTransaction(hotline.TranGetFileNameList, [2]byte{})); err != nil {
 		m.logger.Error("Error requesting files", "err", err)
 	}
 }
 
 func (m *Model) handleServerOpenAccountsMsg() {
+	session := m.activeSession()
+	if session == nil {
+		return
+	}
 	// Request user accounts list
-	if err := m.hlClient.Send(hotline.NewTransaction(hotline.TranListUsers, [2]byte{})); err != nil {
+	if err := session.hlClient.Send(hotline.NewTransaction(hotline.TranListUsers, [2]byte{})); err != nil {
 		m.logger.Error("Error requesting account list", "err", err)
 	}
 }
 
 func (m *Model) handleServerComposeMessageMsg(msg ServerComposeMessageMsg) tea.Cmd {
+	session := m.activeSession()
+	if session == nil {
+		return nil
+	}
 	// Look up target username
 	targetName := ""
-	for _, u := range m.userList {
+	for _, u := range session.userList {
 		if u.ID == msg.TargetUserID {
 			targetName = u.Name
 			break
@@ -843,7 +939,7 @@ func (m *Model) handleServerComposeMessageMsg(msg ServerComposeMessageMsg) tea.C
 	}
 
 	var cmd tea.Cmd
-	m.composeMessageScreen, cmd = NewComposeMessageScreen(
+	session.composeMessageScreen, cmd = NewComposeMessageScreen(
 		msg.TargetUserID,
 		targetName,
 		"", // No quote when composing new message
@@ -856,6 +952,10 @@ func (m *Model) handleServerComposeMessageMsg(msg ServerComposeMessageMsg) tea.C
 // ComposeMessageScreen message handlers
 
 func (m *Model) handleComposeMessageSentMsg(msg ComposeMessageSentMsg) tea.Cmd {
+	session := m.activeSession()
+	if session == nil {
+		return nil
+	}
 	// Build transaction fields
 	fields := []hotline.Field{
 		hotline.NewField(hotline.FieldData, []byte(msg.Text)),
@@ -868,12 +968,12 @@ func (m *Model) handleComposeMessageSentMsg(msg ComposeMessageSentMsg) tea.Cmd {
 	}
 
 	t := hotline.NewTransaction(hotline.TranSendInstantMsg, [2]byte{}, fields...)
-	if err := m.hlClient.Send(t); err != nil {
+	if err := session.hlClient.Send(t); err != nil {
 		m.logger.Error("Error sending private message", "err", err)
 	}
 
 	// Check if there are more pending private messages
-	if len(m.privateMessages) > 0 {
+	if len(session.privateMessages) > 0 {
 		m.updatePrivateMessageModal()
 		m.ReplaceScreen(ScreenModal)
 		return m.modalScreen.Init()
@@ -884,8 +984,9 @@ func (m *Model) handleComposeMessageSentMsg(msg ComposeMessageSentMsg) tea.Cmd {
 }
 
 func (m *Model) handleComposeMessageCancelledMsg() tea.Cmd {
+	session := m.activeSession()
 	// Check if there are more pending private messages
-	if len(m.privateMessages) > 0 {
+	if session != nil && len(session.privateMessages) > 0 {
 		m.updatePrivateMessageModal()
 		m.ReplaceScreen(ScreenModal)
 		return m.modalScreen.Init()
@@ -903,18 +1004,20 @@ func (m *Model) handleServerOpenTasksMsg() {
 // AccountsScreen message handlers
 
 func (m *Model) handleAccountsSaveMsg(msg AccountsSaveMsg) tea.Cmd {
+	session := m.activeSession()
 	// Reset the screen's edit state
-	if m.accountsScreen != nil {
-		m.accountsScreen.ResetEditState()
+	if session != nil && session.accountsScreen != nil {
+		session.accountsScreen.ResetEditState()
 	}
 	m.PopScreen()
 	return m.submitAccountChanges(msg)
 }
 
 func (m *Model) handleAccountsDeleteMsg(msg AccountsDeleteMsg) tea.Cmd {
+	session := m.activeSession()
 	// Reset the screen's edit state
-	if m.accountsScreen != nil {
-		m.accountsScreen.ResetEditState()
+	if session != nil && session.accountsScreen != nil {
+		session.accountsScreen.ResetEditState()
 	}
 	m.PopScreen()
 	return m.deleteAccount(msg.Login)
@@ -923,13 +1026,21 @@ func (m *Model) handleAccountsDeleteMsg(msg AccountsDeleteMsg) tea.Cmd {
 // FilesScreen message handlers
 
 func (m *Model) handleFilesDownloadMsg(msg FilesDownloadMsg) tea.Cmd {
+	session := m.activeSession()
+	if session == nil {
+		return nil
+	}
 	// Pop back to previous screen
 	m.PopScreen()
 	// Initiate download
-	return m.filesScreen.InitiateDownload(msg.FileName, msg.FilePath)
+	return session.filesScreen.InitiateDownload(msg.FileName, msg.FilePath)
 }
 
 func (m *Model) handleFilesGetInfoMsg(msg FilesGetInfoMsg) {
+	session := m.activeSession()
+	if session == nil {
+		return
+	}
 	// Create transaction with file name
 	t := hotline.NewTransaction(
 		hotline.TranGetFileInfo,
@@ -943,7 +1054,7 @@ func (m *Model) handleFilesGetInfoMsg(msg FilesGetInfoMsg) {
 		t.Fields = append(t.Fields, hotline.NewField(hotline.FieldFilePath, hotline.EncodeFilePath(pathStr)))
 	}
 
-	if err := m.hlClient.Send(t); err != nil {
+	if err := session.hlClient.Send(t); err != nil {
 		m.logger.Error("Error sending file info request", "err", err)
 	}
 }
@@ -956,13 +1067,17 @@ func (m *Model) handleFilesUploadMsg() tea.Cmd {
 }
 
 func (m *Model) handleFilesNavigateMsg(msg FilesNavigateMsg) {
+	session := m.activeSession()
+	if session == nil {
+		return
+	}
 	// Update files screen path
-	if m.filesScreen != nil {
-		m.filesScreen.SetFilePath(msg.Path)
+	if session.filesScreen != nil {
+		session.filesScreen.SetFilePath(msg.Path)
 	}
 	// Request new file list for this path
 	f := hotline.NewField(hotline.FieldFilePath, hotline.EncodeFilePath(strings.Join(msg.Path, "/")))
-	if err := m.hlClient.Send(hotline.NewTransaction(hotline.TranGetFileNameList, [2]byte{}, f)); err != nil {
+	if err := session.hlClient.Send(hotline.NewTransaction(hotline.TranGetFileNameList, [2]byte{}, f)); err != nil {
 		m.logger.Error("Error requesting file list", "err", err)
 	}
 }
@@ -970,8 +1085,12 @@ func (m *Model) handleFilesNavigateMsg(msg FilesNavigateMsg) {
 // MessageBoardScreen message handlers
 
 func (m *Model) handleMessageBoardPostRequestedMsg() tea.Cmd {
+	session := m.activeSession()
+	if session == nil {
+		return nil
+	}
 	screen, cmd := NewLegacyNewsPostScreen(m)
-	m.legacyNewsPostScreen = screen
+	session.legacyNewsPostScreen = screen
 	m.PushScreen(ScreenLegacyNewsPost)
 	return cmd
 }
