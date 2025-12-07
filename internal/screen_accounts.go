@@ -175,6 +175,7 @@ func NewAccountsScreen(accounts []accountItem, userAccess hotline.AccessBitmap, 
 
 func newAccountDelegate() list.DefaultDelegate {
 	d := list.NewDefaultDelegate()
+	d.Styles = style.ListItemStyles
 	d.ShowDescription = true
 	return d
 }

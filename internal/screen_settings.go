@@ -145,7 +145,8 @@ func buildSettingsForm(username, iconID, tracker, downloadDir, theme *string, en
 		WithWidth(50).
 		WithShowHelp(false).
 		WithShowErrors(true).
-		WithKeyMap(enterSubmitsKeyMap())
+		WithKeyMap(enterSubmitsKeyMap()).
+		WithTheme(style.FormTheme)
 }
 
 // NewSettingsScreen creates a new settings screen with current settings values

@@ -51,7 +51,7 @@ func DefaultTheme() Theme {
 		Name:            "Classic",
 		TextMuted:       lipgloss.Color("241"),
 		TextDisabled:    lipgloss.Color("240"),
-		Highlight:       lipgloss.Color("170"), // Fuchsia
+		Highlight:       lipgloss.Color("1"),   // Fuchsia
 		Accent:          lipgloss.Color("214"), // Orange
 		Success:         lipgloss.Color("2"),   // Green
 		Error:           lipgloss.Color("1"),   // Red

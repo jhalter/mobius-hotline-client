@@ -71,7 +71,8 @@ func NewNewsArticlePostScreen(path []string, parentID uint32, prefillSubject str
 	).
 		WithWidth(60).
 		WithShowHelp(true).
-		WithShowErrors(true)
+		WithShowErrors(true).
+		WithTheme(style.FormTheme)
 
 	screen := &NewsArticlePostScreen{
 		form:     form,

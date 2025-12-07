@@ -187,7 +187,8 @@ func buildJoinServerForm(mode JoinServerMode, name, server, login, password *str
 		WithWidth(50).
 		WithShowHelp(false).
 		WithShowErrors(true).
-		WithKeyMap(enterSubmitsKeyMap())
+		WithKeyMap(enterSubmitsKeyMap()).
+		WithTheme(style.FormTheme)
 }
 
 // NewJoinServerScreen creates a new join server screen for connecting to a server

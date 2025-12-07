@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/jhalter/mobius-hotline-client/internal/style"
 	"github.com/jhalter/mobius/hotline"
 )
 
@@ -129,6 +130,7 @@ func (i trackerItem) Description() string { return string(i.server.Description) 
 // newTrackerDelegate creates a custom delegate for tracker list items
 func newTrackerDelegate() list.DefaultDelegate {
 	d := list.NewDefaultDelegate()
+	d.Styles = style.ListItemStyles
 
 	d.ShortHelpFunc = func() []key.Binding {
 		return []key.Binding{

@@ -179,6 +179,7 @@ func (i bookmarkItem) Description() string { return i.bookmark.Addr }
 // newBookmarkDelegate creates a custom delegate for bookmark list items
 func newBookmarkDelegate() list.DefaultDelegate {
 	d := list.NewDefaultDelegate()
+	d.Styles = style.ListItemStyles
 
 	// Add custom help text for bookmark-specific keys
 	d.ShortHelpFunc = func() []key.Binding {

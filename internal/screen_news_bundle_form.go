@@ -57,7 +57,8 @@ func NewNewsBundleFormScreen(path []string, m *Model) (*NewsBundleFormScreen, te
 	).
 		WithWidth(60).
 		WithShowHelp(true).
-		WithShowErrors(true)
+		WithShowErrors(true).
+		WithTheme(style.FormTheme)
 
 	screen := &NewsBundleFormScreen{
 		form:   form,

@@ -57,7 +57,8 @@ func NewNewsCategoryFormScreen(path []string, m *Model) (*NewsCategoryFormScreen
 	).
 		WithWidth(60).
 		WithShowHelp(true).
-		WithShowErrors(true)
+		WithShowErrors(true).
+		WithTheme(style.FormTheme)
 
 	screen := &NewsCategoryFormScreen{
 		form:   form,

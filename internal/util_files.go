@@ -5,6 +5,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/jhalter/mobius-hotline-client/internal/style"
 )
 
 // Files screen
@@ -58,6 +59,7 @@ func (i fileItem) Description() string {
 // newFileDelegate creates a custom delegate for file list items
 func newFileDelegate() list.DefaultDelegate {
 	d := list.NewDefaultDelegate()
+	d.Styles = style.ListItemStyles
 
 	// Add custom help text for file-specific keys
 	d.ShortHelpFunc = func() []key.Binding {

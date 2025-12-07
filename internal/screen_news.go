@@ -693,6 +693,7 @@ func (s *NewsScreen) refreshArticleList() {
 // newNewsBundleDelegate creates a delegate for browsing bundles/categories
 func newNewsBundleDelegate() list.DefaultDelegate {
 	d := list.NewDefaultDelegate()
+	d.Styles = style.ListItemStyles
 
 	d.ShortHelpFunc = func() []key.Binding {
 		return []key.Binding{
@@ -744,6 +745,7 @@ func newNewsBundleDelegate() list.DefaultDelegate {
 // newNewsArticleDelegate creates a delegate for viewing articles in a category
 func newNewsArticleDelegate() list.DefaultDelegate {
 	d := list.NewDefaultDelegate()
+	d.Styles = style.ListItemStyles
 
 	d.ShortHelpFunc = func() []key.Binding {
 		return []key.Binding{
@@ -843,7 +845,8 @@ func (s *NewsScreen) InitArticlePostForm(prefillSubject string, parentArticleID 
 	).
 		WithWidth(60).
 		WithShowHelp(true).
-		WithShowErrors(true)
+		WithShowErrors(true).
+		WithTheme(style.FormTheme)
 
 	return s.articlePostForm.Init()
 }
@@ -876,7 +879,8 @@ func (s *NewsScreen) InitBundleForm() tea.Cmd {
 	).
 		WithWidth(60).
 		WithShowHelp(true).
-		WithShowErrors(true)
+		WithShowErrors(true).
+		WithTheme(style.FormTheme)
 
 	return s.bundleForm.Init()
 }
@@ -909,7 +913,8 @@ func (s *NewsScreen) InitCategoryForm() tea.Cmd {
 	).
 		WithWidth(60).
 		WithShowHelp(true).
-		WithShowErrors(true)
+		WithShowErrors(true).
+		WithTheme(style.FormTheme)
 
 	return s.categoryForm.Init()
 }

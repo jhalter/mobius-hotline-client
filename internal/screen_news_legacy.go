@@ -37,7 +37,8 @@ func NewLegacyNewsPostScreen(m *Model) (*LegacyNewsPostScreen, tea.Cmd) {
 	).
 		WithWidth(45).
 		WithShowHelp(false).
-		WithShowErrors(false)
+		WithShowErrors(false).
+		WithTheme(style.FormTheme)
 
 	screen := &LegacyNewsPostScreen{
 		form:   form,

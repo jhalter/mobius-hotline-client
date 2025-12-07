@@ -58,7 +58,8 @@ func NewComposeMessageScreen(targetID [2]byte, targetName string, quoteText stri
 	).
 		WithWidth(60).
 		WithShowHelp(true).
-		WithShowErrors(true)
+		WithShowErrors(true).
+		WithTheme(style.FormTheme)
 
 	screen := &ComposeMessageScreen{
 		form:       form,

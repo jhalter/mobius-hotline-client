@@ -3,6 +3,8 @@ package style
 import (
 	"image/color"
 
+	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/lucasb-eyer/go-colorful"
 	"github.com/muesli/gamut"
@@ -39,6 +41,8 @@ var (
 	DialogBoxStyle     lipgloss.Style
 	Subtle             lipgloss.AdaptiveColor
 	Blends             []color.Color
+	FormTheme          *huh.Theme
+	ListItemStyles     list.DefaultItemStyles
 )
 
 func init() {
@@ -136,6 +140,41 @@ func regenerateStyles() {
 
 	// Rainbow gradient colors
 	Blends = gamut.Blends(lipgloss.Color("#F25D94"), lipgloss.Color("#EDFF82"), 50)
+
+	// Form theme for huh forms
+	FormTheme = huh.ThemeCharm()
+	FormTheme.Focused.Title = FormTheme.Focused.Title.Foreground(t.Highlight)
+	FormTheme.Focused.SelectSelector = FormTheme.Focused.SelectSelector.Foreground(t.Highlight)
+	FormTheme.Focused.SelectedOption = FormTheme.Focused.SelectedOption.Foreground(t.Highlight)
+	FormTheme.Focused.FocusedButton = FormTheme.Focused.FocusedButton.
+		Foreground(lipgloss.Color("0")).
+		Background(t.Highlight)
+	FormTheme.Focused.BlurredButton = FormTheme.Focused.BlurredButton.
+		Foreground(t.TextMuted).
+		Background(t.BackgroundPanel)
+	FormTheme.Focused.TextInput.Cursor = FormTheme.Focused.TextInput.Cursor.Foreground(t.Highlight)
+	FormTheme.Focused.TextInput.Prompt = FormTheme.Focused.TextInput.Prompt.Foreground(t.Accent)
+	FormTheme.Blurred.Title = FormTheme.Blurred.Title.Foreground(t.TextMuted)
+	FormTheme.Blurred.TextInput.Prompt = FormTheme.Blurred.TextInput.Prompt.Foreground(t.TextMuted)
+	FormTheme.Blurred.SelectedOption = FormTheme.Blurred.SelectedOption.Foreground(t.Highlight)
+
+	// TEST
+	FormTheme.Blurred.FocusedButton = FormTheme.Blurred.FocusedButton.
+		Foreground(lipgloss.Color("0")).
+		Background(t.Highlight)
+
+	FormTheme.Blurred.BlurredButton = FormTheme.Blurred.BlurredButton.
+		Foreground(t.TextMuted).
+		Background(t.BackgroundPanel)
+
+	// List item styles for bubbles/list component
+	ListItemStyles = list.NewDefaultItemStyles()
+	ListItemStyles.SelectedTitle = ListItemStyles.SelectedTitle.
+		Foreground(t.Highlight).
+		BorderForeground(t.Highlight)
+	ListItemStyles.SelectedDesc = ListItemStyles.SelectedDesc.
+		Foreground(t.Highlight).
+		BorderForeground(t.Highlight)
 }
 
 func Rainbow(base lipgloss.Style, s string, colors []color.Color) string {
