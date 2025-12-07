@@ -99,13 +99,9 @@ func (s *TasksScreen) View() string {
 
 	var b strings.Builder
 
-	// Header
-	b.WriteString(style.ServerTitleStyle.Render("Download Tasks"))
-	b.WriteString("\n\n")
-
 	// Active section
 	if len(activeTasks) > 0 {
-		sectionStyle := lipgloss.NewStyle().Bold(true).Foreground(style.ColorFuscia)
+		sectionStyle := lipgloss.NewStyle().Bold(true).Foreground(style.CurrentTheme.Highlight)
 		b.WriteString(sectionStyle.Render("Active Downloads"))
 		b.WriteString("\n\n")
 
@@ -122,7 +118,7 @@ func (s *TasksScreen) View() string {
 	// Completed section
 	if len(completedTasks) > 0 {
 		b.WriteString("\n")
-		sectionStyle := lipgloss.NewStyle().Bold(true).Foreground(style.ColorFuscia)
+		sectionStyle := lipgloss.NewStyle().Bold(true).Foreground(style.CurrentTheme.Highlight)
 		b.WriteString(sectionStyle.Render("Recent Completed"))
 		b.WriteString("\n\n")
 
@@ -136,7 +132,7 @@ func (s *TasksScreen) View() string {
 	b.WriteString("\n")
 	b.WriteString(s.help.View(s.keys))
 
-	return b.String()
+	return style.RenderSubscreen(s.width, s.height, "Tasks", b.String())
 }
 
 // SetSize updates dimensions
@@ -159,7 +155,7 @@ func (s *TasksScreen) renderTask(task *Task) string {
 	var b strings.Builder
 
 	// File name
-	highlightStyle := lipgloss.NewStyle().Bold(true).Foreground(style.ColorFuscia)
+	highlightStyle := lipgloss.NewStyle().Bold(true).Foreground(style.CurrentTheme.Highlight)
 	b.WriteString(highlightStyle.Render(task.FileName))
 	b.WriteString("\n")
 

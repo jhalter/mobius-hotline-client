@@ -486,7 +486,7 @@ func (s *NewsScreen) renderListOnly() string {
 				s.list.View(),
 			),
 		),
-		lipgloss.WithWhitespaceBackground(style.ColorGrey3),
+		lipgloss.WithWhitespaceBackground(style.CurrentTheme.BorderMuted),
 	)
 }
 
@@ -547,7 +547,7 @@ func (s *NewsScreen) renderSplitView() string {
 		style.SubScreenStyle.Render(
 			splitView,
 		),
-		lipgloss.WithWhitespaceBackground(style.ColorGrey3),
+		lipgloss.WithWhitespaceBackground(style.CurrentTheme.BorderMuted),
 	)
 }
 

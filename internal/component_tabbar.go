@@ -10,22 +10,21 @@ import (
 // Tab bar styles
 var (
 	tabActiveStyle = lipgloss.NewStyle().
-		Bold(true).
-		Foreground(lipgloss.Color("#FFFFFF")).
-		Background(lipgloss.Color("#5555FF")).
-		Padding(0, 1)
+			Bold(true).
+			Background(style.CurrentTheme.Accent).
+			Padding(0, 1)
 
 	tabInactiveStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#AAAAAA")).
-		Background(lipgloss.Color("#333333")).
-		Padding(0, 1)
+				Foreground(style.CurrentTheme.TextMuted).
+				Background(style.CurrentTheme.BorderMuted).
+				Padding(0, 1)
 
 	tabActivityStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#FFFF00")).
-		Bold(true)
+				Foreground(style.CurrentTheme.Highlight).
+				Bold(true)
 
 	tabBarStyle = lipgloss.NewStyle().
-		Background(lipgloss.Color("#222222"))
+			Background(style.CurrentTheme.BackgroundPanel)
 )
 
 // RenderTabBar renders the horizontal tab bar showing all connected servers
@@ -70,7 +69,7 @@ func (m *Model) RenderTabBar() string {
 	}
 
 	// Add "+" tab for new connections
-	plusContent := "ctrl+k +"
+	plusContent := "^K +"
 	plusTab := tabInactiveStyle.Render(plusContent)
 	tabs = append(tabs, plusTab)
 
@@ -93,19 +92,18 @@ func (m *Model) TabBarHeight() int {
 func updateTabBarStyles() {
 	tabActiveStyle = lipgloss.NewStyle().
 		Bold(true).
-		Foreground(lipgloss.Color("#FFFFFF")).
 		Background(style.CurrentTheme.Accent).
 		Padding(0, 1)
 
 	tabInactiveStyle = lipgloss.NewStyle().
 		Foreground(style.CurrentTheme.TextMuted).
-		Background(lipgloss.Color("#333333")).
+		Background(style.CurrentTheme.BorderMuted).
 		Padding(0, 1)
 
 	tabActivityStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#FFFF00")).
+		Foreground(style.CurrentTheme.Highlight).
 		Bold(true)
 
 	tabBarStyle = lipgloss.NewStyle().
-		Background(lipgloss.Color("#222222"))
+		Background(style.CurrentTheme.BackgroundPanel)
 }

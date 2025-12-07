@@ -51,14 +51,14 @@ func DefaultTheme() Theme {
 		Name:            "Classic",
 		TextMuted:       lipgloss.Color("241"),
 		TextDisabled:    lipgloss.Color("240"),
-		Highlight:       lipgloss.Color("1"),   // Fuchsia
+		Highlight:       lipgloss.Color("170"), // Fuchsia
 		Accent:          lipgloss.Color("214"), // Orange
 		Success:         lipgloss.Color("2"),   // Green
 		Error:           lipgloss.Color("1"),   // Red
 		Admin:           lipgloss.Color("196"), // Bright red
 		BorderPrimary:   lipgloss.Color("63"),  // Cyan
 		BorderMuted:     lipgloss.Color("236"), // Dark grey
-		BackgroundPanel: lipgloss.Color("236"),
+		BackgroundPanel: lipgloss.Color("0"),
 		DialogBorder:    lipgloss.Color("#874BFD"),
 		GradientStart:   lipgloss.Color("196"),
 		GradientEnd:     lipgloss.Color("#BF281B"),

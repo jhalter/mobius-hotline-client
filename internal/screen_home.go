@@ -83,12 +83,12 @@ func (s *HomeScreen) View() string {
 		lipgloss.Center,
 		lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(style.ColorBrightRed).
+			BorderForeground(style.CurrentTheme.Admin).
 			Padding(1, 2).
 			Render(lipgloss.JoinVertical(
 				lipgloss.Left,
 				lipgloss.NewStyle().
-					Foreground(style.ColorBrightRed).
+					Foreground(style.CurrentTheme.Admin).
 					Bold(true).
 					Render(style.ApplyBoldForegroundGrad(s.welcomeBanner, style.CurrentTheme.GradientStart, style.CurrentTheme.GradientEnd)),
 				strings.Join(
@@ -102,7 +102,7 @@ func (s *HomeScreen) View() string {
 					"\n",
 				),
 			)),
-		lipgloss.WithWhitespaceChars("☃︎"),
+		lipgloss.WithWhitespaceChars("░░░▒▒▒▓▓▓███▓▓▓▒▒▒░"),
 		lipgloss.WithWhitespaceForeground(style.Subtle),
 	)
 }

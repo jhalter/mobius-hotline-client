@@ -10,14 +10,6 @@ import (
 	"github.com/muesli/gamut"
 )
 
-// Legacy color constants - these are updated when theme changes for backward compatibility.
-var (
-	ColorCyan      lipgloss.Color
-	ColorBrightRed lipgloss.Color
-	ColorFuscia    lipgloss.Color
-	ColorGrey3     lipgloss.Color
-)
-
 const Background1 = "☖"
 
 // Style variables - regenerated when theme changes.
@@ -52,12 +44,6 @@ func init() {
 // regenerateStyles rebuilds all styles from the current theme.
 func regenerateStyles() {
 	t := CurrentTheme
-
-	// Update legacy color aliases for backward compatibility
-	ColorCyan = t.BorderPrimary
-	ColorBrightRed = t.Admin
-	ColorFuscia = t.Highlight
-	ColorGrey3 = t.BorderMuted
 
 	// Base app style
 	AppStyle = lipgloss.NewStyle().Padding(1, 2)
@@ -98,7 +84,7 @@ func regenerateStyles() {
 	UsernameStyle = lipgloss.NewStyle().Bold(true)
 
 	SubScreenStyle = lipgloss.NewStyle().
-		Border(lipgloss.DoubleBorder()).
+		Border(lipgloss.RoundedBorder()).
 		BorderForeground(t.BorderPrimary).
 		Background(t.BackgroundPanel).
 		Padding(1, 1)

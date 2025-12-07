@@ -90,7 +90,7 @@ func (s *FilePickerScreen) View() string {
 				s.filePicker.View(),
 			),
 		),
-		lipgloss.WithWhitespaceBackground(style.ColorGrey3),
+		lipgloss.WithWhitespaceBackground(style.CurrentTheme.BorderMuted),
 	)
 }
 

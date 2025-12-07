@@ -9,7 +9,6 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/jhalter/mobius-hotline-client/internal/style"
 	"github.com/jhalter/mobius/hotline"
 )
@@ -35,9 +34,11 @@ func NewTrackerScreen(servers []hotline.ServerRecord, m *Model) *TrackerScreen {
 		items[i] = trackerItem{server: srv}
 	}
 
-	l := list.New(items, newTrackerDelegate(), m.width, m.height)
-	l.Title = "Tracker Servers"
+	h, v := style.AppStyle.GetFrameSize()
+
+	l := list.New(items, newTrackerDelegate(), h, m.height-v)
 	l.SetFilteringEnabled(true)
+	l.SetShowTitle(false)
 	l.SetShowStatusBar(true)
 	l.SetShowHelp(true)
 	l.DisableQuitKeybindings()
@@ -93,7 +94,9 @@ func (s *TrackerScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 
 // View implements tea.Model
 func (s *TrackerScreen) View() string {
-	return lipgloss.NewStyle().Padding(1, 2).Render(s.list.View())
+	s.list.SetSize(s.width, s.height-6)
+
+	return style.RenderSubscreen(s.width, s.height, "Tracker Servers", s.list.View())
 }
 
 // SetSize updates the screen dimensions

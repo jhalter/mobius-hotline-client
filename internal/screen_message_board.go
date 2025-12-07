@@ -86,7 +86,7 @@ func NewMessageBoardScreen(content string, m *Model) *MessageBoardScreen {
 	return &MessageBoardScreen{
 		viewport: vp,
 		width:    m.width,
-		height:   m.height,
+		height:   m.height - 10,
 		model:    m,
 		help:     help.New(),
 		keys:     keys,
@@ -127,7 +127,7 @@ func (s *MessageBoardScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 func (s *MessageBoardScreen) View() string {
 	return lipgloss.Place(
 		s.width,
-		s.height-8,
+		s.height-10,
 		lipgloss.Center,
 		lipgloss.Center,
 		style.SubScreenStyle.Render(
@@ -144,7 +144,8 @@ func (s *MessageBoardScreen) View() string {
 				),
 			),
 		),
-		lipgloss.WithWhitespaceBackground(style.ColorGrey3),
+		lipgloss.WithWhitespaceChars("~"),
+		lipgloss.WithWhitespaceForeground(style.Subtle),
 	)
 }
 

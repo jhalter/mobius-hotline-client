@@ -146,7 +146,7 @@ func (s *QuickMenuScreen) renderItem(index int, hotkey, label string) string {
 		// Highlight selected item
 		return lipgloss.NewStyle().
 			Background(style.CurrentTheme.Accent).
-			Foreground(lipgloss.Color("#FFFFFF")).
+			Foreground(style.CurrentTheme.Admin).
 			Render(text)
 	}
 	return text

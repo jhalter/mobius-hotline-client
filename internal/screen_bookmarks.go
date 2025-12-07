@@ -47,12 +47,10 @@ func NewBookmarkScreen(bookmarks []Bookmark, m *Model) *BookmarkScreen {
 		items[i] = bookmarkItem{bookmark: bm, index: i}
 	}
 
-	// Calculate dimensions accounting for app style padding
 	h, v := style.AppStyle.GetFrameSize()
-
 	l := list.New(items, newBookmarkDelegate(), m.width-h, m.height-v)
 	l.SetFilteringEnabled(true)
-	l.SetShowStatusBar(true)
+	l.SetShowStatusBar(false)
 	l.SetShowTitle(false)
 	l.SetShowHelp(true)
 	l.DisableQuitKeybindings()
@@ -152,7 +150,9 @@ func (s *BookmarkScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 
 // View implements tea.Model
 func (s *BookmarkScreen) View() string {
-	return style.AppStyle.Render(s.list.View())
+	s.list.SetSize(s.width-10, s.height-10)
+
+	return style.RenderSubscreen(s.width, s.height, "Bookmarks", s.list.View())
 }
 
 // SetSize updates the screen dimensions

@@ -232,14 +232,14 @@ func (s *ServerScreen) View() string {
 
 	// Chat area - use double border when focused, grey border when scrolled up
 	chatBorder := lipgloss.RoundedBorder()
-	chatBorderColor := style.ColorCyan // Default cyan
+	chatBorderColor := style.CurrentTheme.BorderPrimary
 
 	if !s.focusOnUserList {
 		chatBorder = lipgloss.DoubleBorder()
 
 		// Change to grey when in scrollback mode (not at bottom)
 		if !s.chatViewport.AtBottom() {
-			chatBorderColor = style.ColorGrey3
+			chatBorderColor = style.CurrentTheme.BorderMuted
 		}
 	}
 
@@ -256,7 +256,7 @@ func (s *ServerScreen) View() string {
 	}
 	userView := lipgloss.NewStyle().
 		Border(userBorder).
-		BorderForeground(style.ColorCyan).
+		BorderForeground(style.CurrentTheme.BorderPrimary).
 		Render(s.userViewport.View())
 
 	return lipgloss.JoinVertical(
