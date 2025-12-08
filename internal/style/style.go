@@ -12,6 +12,8 @@ import (
 
 const Background1 = "☖"
 
+var ColorHotlineRed = lipgloss.Color("196")
+
 // Style variables - regenerated when theme changes.
 var (
 	AppStyle           lipgloss.Style
@@ -50,7 +52,7 @@ func regenerateStyles() {
 
 	// Banner styles
 	HotkeyStyle = lipgloss.NewStyle().
-		Foreground(t.Accent).
+		Foreground(t.Highlight).
 		Bold(true)
 
 	// Styling for the main server screen title.
@@ -86,7 +88,6 @@ func regenerateStyles() {
 	SubScreenStyle = lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(t.BorderPrimary).
-		Background(t.BackgroundPanel).
 		Padding(1, 1)
 
 	TaskWidgetStyle = lipgloss.NewStyle().

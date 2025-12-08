@@ -12,11 +12,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/google/uuid"
 	"github.com/jhalter/mobius/hotline"
 	"gopkg.in/yaml.v3"
 )
@@ -652,7 +651,9 @@ func (m *Model) View() string {
 		return ""
 	}
 
-	screenContent := screen.View()
+	screenContent := lipgloss.NewStyle().
+		//Background(style.CurrentTheme.BackgroundPanel).
+		Render(screen.View())
 
 	// Show tab bar when connected to servers and on a server-related screen
 	if len(m.sessions) > 0 && isServerScreen(m.CurrentScreen()) {

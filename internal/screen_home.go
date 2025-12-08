@@ -83,26 +83,35 @@ func (s *HomeScreen) View() string {
 		lipgloss.Center,
 		lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(style.CurrentTheme.Admin).
-			Padding(1, 2).
-			Render(lipgloss.JoinVertical(
-				lipgloss.Left,
+			//Background(style.CurrentTheme.BackgroundPanel).
+			BorderForeground(style.ColorHotlineRed).
+			Padding(1, 3).
+			Render(
 				lipgloss.NewStyle().
-					Foreground(style.CurrentTheme.Admin).
-					Bold(true).
-					Render(style.ApplyBoldForegroundGrad(s.welcomeBanner, style.CurrentTheme.GradientStart, style.CurrentTheme.GradientEnd)),
-				strings.Join(
-					[]string{
-						fmt.Sprintf("%s Join Server", style.HotkeyStyle.Render("(j)")),
-						fmt.Sprintf("%s Bookmarks", style.HotkeyStyle.Render("(b)")),
-						fmt.Sprintf("%s Browse Tracker", style.HotkeyStyle.Render("(t)")),
-						fmt.Sprintf("%s Settings", style.HotkeyStyle.Render("(s)")),
-						fmt.Sprintf("%s Quit", style.HotkeyStyle.Render("(q)")),
-					},
-					"\n",
-				),
-			)),
-		lipgloss.WithWhitespaceChars("░░░▒▒▒▓▓▓███▓▓▓▒▒▒░"),
+					Render(
+						lipgloss.JoinVertical(
+							lipgloss.Left,
+							lipgloss.NewStyle().
+								//Background(style.CurrentTheme.BackgroundPanel).
+								Foreground(style.ColorHotlineRed).
+								Render(s.welcomeBanner),
+							lipgloss.NewStyle().
+								//Background(style.CurrentTheme.BackgroundPanel).
+								Render(strings.Join(
+									[]string{
+										fmt.Sprintf("%s Join Server", style.HotkeyStyle.Render("(j)")),
+										fmt.Sprintf("%s Bookmarks", style.HotkeyStyle.Render("(b)")),
+										fmt.Sprintf("%s Browse Tracker", style.HotkeyStyle.Render("(t)")),
+										fmt.Sprintf("%s Settings", style.HotkeyStyle.Render("(s)")),
+										fmt.Sprintf("%s Quit", style.HotkeyStyle.Render("(q)")),
+									},
+									"\n",
+								)),
+						),
+					),
+			),
+		//lipgloss.WithWhitespaceBackground((style.CurrentTheme.Error)),
+		lipgloss.WithWhitespaceChars("⌘"),
 		lipgloss.WithWhitespaceForeground(style.Subtle),
 	)
 }
