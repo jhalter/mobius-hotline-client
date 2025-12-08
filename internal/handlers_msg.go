@@ -487,7 +487,25 @@ func (m *Model) handleNewsArticleDataMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	newsArticleData := msg.(newsArticleDataMsg)
 	if session.newsScreen != nil {
-		session.newsScreen.SetArticleData(newsArticleData.article)
+		// Get pending article ID and path from news screen
+		articleID := session.newsScreen.GetPendingArticleID()
+		path := session.newsScreen.GetPath()
+		session.newsScreen.ClearPendingArticleID()
+
+		// Create and push the article view screen
+		session.newsArticleViewScreen = NewNewsArticleViewScreen(
+			articleID,
+			newsArticleData.article.Title,
+			newsArticleData.article.Poster,
+			newsArticleData.article.Date,
+			newsArticleData.article.Data,
+			path,
+			m,
+		)
+		if session.userAccess.IsSet(hotline.AccessNewsPostArt) {
+			session.newsArticleViewScreen.SetUserAccess(session.userAccess)
+		}
+		m.PushScreen(ScreenNewsArticleView)
 	}
 	return m, nil
 }
@@ -548,6 +566,17 @@ func (m *Model) handleNewsPostArticleMsg(msg NewsPostArticleMsg) tea.Cmd {
 		return nil
 	}
 	screen, cmd := NewNewsArticlePostScreen(session.newsScreen.GetPath(), msg.ParentID, msg.Subject, m)
+	session.newsArticlePostScreen = screen
+	m.PushScreen(ScreenNewsArticlePost)
+	return cmd
+}
+
+func (m *Model) handleNewsArticleViewReplyMsg(msg NewsArticleViewReplyMsg) tea.Cmd {
+	session := m.activeSession()
+	if session == nil {
+		return nil
+	}
+	screen, cmd := NewNewsArticlePostScreen(msg.Path, msg.ArticleID, msg.Subject, m)
 	session.newsArticlePostScreen = screen
 	m.PushScreen(ScreenNewsArticlePost)
 	return cmd

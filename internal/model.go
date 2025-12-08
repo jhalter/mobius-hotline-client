@@ -38,6 +38,7 @@ const (
 	ScreenServerUI
 	ScreenNews
 	ScreenNewsArticlePost
+	ScreenNewsArticleView
 	ScreenNewsBundleForm
 	ScreenNewsCategoryForm
 	ScreenLegacyNewsPost

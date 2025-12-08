@@ -7,13 +7,11 @@ import (
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/jhalter/mobius-hotline-client/internal/style"
 	"github.com/jhalter/mobius/hotline"
-	"github.com/muesli/reflow/wordwrap"
 )
 
 // Messages sent from NewsScreen to parent
@@ -106,29 +104,18 @@ func (i newsArticleItem) Description() string {
 	return i.poster + "   " + timestampStyle.Render(timestamp)
 }
 
-// selectedArticleData holds the full article data for display
-type selectedArticleData struct {
-	id      uint32
-	title   string
-	poster  string
-	date    [8]byte
-	content string
-}
-
 // NewsScreen is a self-contained BubbleTea model for browsing threaded news
 type NewsScreen struct {
-	list            list.Model
-	articleViewport viewport.Model
-	width, height   int
-	model           *Model
+	list          list.Model
+	width, height int
+	model         *Model
 
 	// News state
-	newsPath          []string             // Track current location in news hierarchy
-	isViewingCategory bool                 // true = viewing category (articles), false = viewing bundle/root
-	selectedArticle   *selectedArticleData // Currently selected article
-	pendingArticleID  uint32               // Article ID of pending request for tracking
-	allArticles       []newsArticleItem    // Complete article set
-	expandedArticles  map[uint32]bool      // Track expanded state
+	newsPath          []string          // Track current location in news hierarchy
+	isViewingCategory bool              // true = viewing category (articles), false = viewing bundle/root
+	pendingArticleID  uint32            // Article ID of pending request for tracking
+	allArticles       []newsArticleItem // Complete article set
+	expandedArticles  map[uint32]bool   // Track expanded state
 
 	// Form state for posting
 	articlePostForm      *huh.Form // For threaded news article posting
@@ -148,7 +135,6 @@ func NewNewsScreen(m *Model) *NewsScreen {
 
 	return &NewsScreen{
 		list:             l,
-		articleViewport:  viewport.New(0, 0),
 		width:            m.width,
 		height:           m.height,
 		model:            m,
@@ -172,7 +158,6 @@ func (s *NewsScreen) SetCategories(categories []newsItem) {
 	s.list.SetShowHelp(true)
 	s.list.DisableQuitKeybindings()
 	s.isViewingCategory = false
-	s.selectedArticle = nil
 }
 
 // SetArticles initializes the screen with news articles
@@ -204,18 +189,15 @@ func (s *NewsScreen) SetArticles(articles []newsArticleItem) {
 	s.list.SetShowHelp(true)
 	s.list.DisableQuitKeybindings()
 	s.isViewingCategory = true
-	s.selectedArticle = nil
 }
 
-// SetArticleData sets the currently selected article's full data
-func (s *NewsScreen) SetArticleData(article hotline.NewsArtData) {
-	s.selectedArticle = &selectedArticleData{
-		id:      s.pendingArticleID,
-		title:   article.Title,
-		poster:  article.Poster,
-		date:    article.Date,
-		content: article.Data,
-	}
+// GetPendingArticleID returns the pending article ID
+func (s *NewsScreen) GetPendingArticleID() uint32 {
+	return s.pendingArticleID
+}
+
+// ClearPendingArticleID clears the pending article ID
+func (s *NewsScreen) ClearPendingArticleID() {
 	s.pendingArticleID = 0
 }
 
@@ -269,26 +251,8 @@ func (s *NewsScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 func (s *NewsScreen) handleKeys(msg tea.KeyMsg) (ScreenModel, tea.Cmd) {
 	switch msg.String() {
 	case "esc":
-		// If an article is selected, deselect it first
-		if s.selectedArticle != nil {
-			s.selectedArticle = nil
-			return s, nil
-		}
-
-		// Check if we're viewing articles (not categories)
-		items := s.list.Items()
-		isViewingArticles := false
-		if len(items) > 0 {
-			for _, item := range items {
-				if _, ok := item.(newsArticleItem); ok {
-					isViewingArticles = true
-					break
-				}
-			}
-		}
-
-		// If viewing articles and not at root, go back one level
-		if isViewingArticles && len(s.newsPath) > 0 {
+		// If we have a path, go back one level in the hierarchy
+		if len(s.newsPath) > 0 {
 			// Go up one level
 			s.newsPath = s.newsPath[:len(s.newsPath)-1]
 			pathCopy := make([]string, len(s.newsPath))
@@ -298,10 +262,8 @@ func (s *NewsScreen) handleKeys(msg tea.KeyMsg) (ScreenModel, tea.Cmd) {
 			}
 		}
 
-		// Otherwise close the news modal
-		s.newsPath = []string{}
+		// At root - close the news modal
 		s.isViewingCategory = false
-		s.selectedArticle = nil
 		return s, func() tea.Msg { return NewsCancelledMsg{} }
 
 	case "ctrl+p":
@@ -313,23 +275,6 @@ func (s *NewsScreen) handleKeys(msg tea.KeyMsg) (ScreenModel, tea.Cmd) {
 			}
 		}
 		return s, nil
-
-	case "ctrl+r":
-		// Only allow replying when viewing an article
-		if s.selectedArticle == nil {
-			return s, nil
-		}
-
-		// Create subject with "Re: " prefix
-		subject := s.selectedArticle.title
-		if !strings.HasPrefix(subject, "Re: ") {
-			subject = "Re: " + subject
-		}
-		parentID := s.selectedArticle.id
-
-		return s, func() tea.Msg {
-			return NewsPostArticleMsg{Subject: subject, ParentID: parentID}
-		}
 
 	case "ctrl+b":
 		// Only allow creating bundles when viewing bundle/root (not categories)
@@ -362,23 +307,6 @@ func (s *NewsScreen) handleKeys(msg tea.KeyMsg) (ScreenModel, tea.Cmd) {
 		}
 		return s, nil
 
-	case "pgup", "pgdown", "up", "down":
-		// If we have an article selected, handle viewport scrolling
-		if s.selectedArticle != nil {
-			switch msg.String() {
-			case "pgup":
-				s.articleViewport.PageUp()
-				return s, nil
-			case "pgdown":
-				s.articleViewport.PageDown()
-				return s, nil
-			}
-		}
-		// Otherwise pass to list
-		var cmd tea.Cmd
-		s.list, cmd = s.list.Update(msg)
-		return s, cmd
-
 	case "enter":
 		// Get selected item
 		selectedItem := s.list.SelectedItem()
@@ -391,7 +319,6 @@ func (s *NewsScreen) handleKeys(msg tea.KeyMsg) (ScreenModel, tea.Cmd) {
 				if len(s.newsPath) > 0 {
 					s.newsPath = s.newsPath[:len(s.newsPath)-1]
 				}
-				s.selectedArticle = nil
 
 				pathCopy := make([]string, len(s.newsPath))
 				copy(pathCopy, s.newsPath)
@@ -402,7 +329,6 @@ func (s *NewsScreen) handleKeys(msg tea.KeyMsg) (ScreenModel, tea.Cmd) {
 
 			// Navigate into bundle or category
 			s.newsPath = append(s.newsPath, item.name)
-			s.selectedArticle = nil
 
 			pathCopy := make([]string, len(s.newsPath))
 			copy(pathCopy, s.newsPath)
@@ -460,16 +386,6 @@ func (s *NewsScreen) handleKeys(msg tea.KeyMsg) (ScreenModel, tea.Cmd) {
 
 // View implements tea.Model
 func (s *NewsScreen) View() string {
-	// Check if we have an article selected for split view
-	if s.selectedArticle != nil {
-		return s.renderSplitView()
-	}
-
-	// Otherwise, render full modal with list only
-	return s.renderListOnly()
-}
-
-func (s *NewsScreen) renderListOnly() string {
 	// Set news list dimensions
 	s.list.SetSize(s.width-10, s.height-10)
 
@@ -485,67 +401,6 @@ func (s *NewsScreen) renderListOnly() string {
 				style.SubTitleStyle.Render("News"),
 				s.list.View(),
 			),
-		),
-		lipgloss.WithWhitespaceBackground(style.CurrentTheme.BorderMuted),
-	)
-}
-
-func (s *NewsScreen) renderSplitView() string {
-	// Calculate available width for article content
-	const borderWidth = 2
-	const padding = 2 // Padding from Padding(0, 1) on both sides
-
-	articleWidth := (s.width - 10) / 2 // Half of modal width
-	wrapWidth := articleWidth - borderWidth - padding
-	if wrapWidth < 20 {
-		wrapWidth = 20 // Minimum for edge cases
-	}
-
-	// Wrap article content to fit width
-	wrappedContent := wordwrap.String(s.selectedArticle.content, wrapWidth)
-
-	s.articleViewport.SetContent(wrappedContent)
-
-	// Update list dimensions for top half
-	s.list.SetSize(s.width-10, s.height-10)
-
-	// Build top half (article list)
-	articleList := lipgloss.NewStyle().
-		Border(lipgloss.NormalBorder(), false, true, false, false).
-		BorderForeground(style.CurrentTheme.BorderPrimary).
-		Render(s.list.View())
-
-	// Build bottom half (article content)
-	var articleHeader strings.Builder
-	articleHeader.WriteString(lipgloss.NewStyle().Bold(true).Render(s.selectedArticle.title))
-	articleHeader.WriteString("\n")
-
-	posterInfo := s.selectedArticle.poster
-
-	timestamp := hotline.Time(s.selectedArticle.date).Format("Jan 2, 2006 at 3:04 PM")
-	posterInfo += " - " + timestamp
-
-	articleHeader.WriteString(lipgloss.NewStyle().Faint(true).Render(posterInfo))
-	articleHeader.WriteString("\n\n")
-
-	renderedArticle := lipgloss.NewStyle().
-		Padding(0, 1).
-		Render(articleHeader.String() + wrappedContent)
-
-	// Combine top and bottom
-	splitView := lipgloss.JoinHorizontal(
-		lipgloss.Left,
-		articleList,
-		renderedArticle,
-	)
-
-	return lipgloss.Place(
-		s.width,
-		s.height,
-		lipgloss.Center,
-		lipgloss.Center,
-		style.SubScreenStyle.Render(
-			splitView,
 		),
 		lipgloss.WithWhitespaceBackground(style.CurrentTheme.BorderMuted),
 	)
@@ -571,11 +426,6 @@ func (s *NewsScreen) SetPath(path []string) {
 // IsViewingCategory returns true if viewing articles in a category
 func (s *NewsScreen) IsViewingCategory() bool {
 	return s.isViewingCategory
-}
-
-// GetSelectedArticle returns the currently selected article
-func (s *NewsScreen) GetSelectedArticle() *selectedArticleData {
-	return s.selectedArticle
 }
 
 // Helper functions

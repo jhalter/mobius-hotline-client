@@ -37,6 +37,7 @@ type ServerSession struct {
 	serverScreen           *ServerScreen
 	newsScreen             *NewsScreen
 	newsArticlePostScreen  *NewsArticlePostScreen
+	newsArticleViewScreen  *NewsArticleViewScreen
 	newsBundleFormScreen   *NewsBundleFormScreen
 	newsCategoryFormScreen *NewsCategoryFormScreen
 	legacyNewsPostScreen   *LegacyNewsPostScreen
@@ -107,6 +108,8 @@ func (s *ServerSession) currentScreenModel() ScreenModel {
 		return s.newsScreen
 	case ScreenNewsArticlePost:
 		return s.newsArticlePostScreen
+	case ScreenNewsArticleView:
+		return s.newsArticleViewScreen
 	case ScreenNewsBundleForm:
 		return s.newsBundleFormScreen
 	case ScreenNewsCategoryForm:
@@ -135,6 +138,9 @@ func (s *ServerSession) resizeAllScreens(w, h int) {
 	}
 	if s.newsArticlePostScreen != nil {
 		s.newsArticlePostScreen.SetSize(w, h)
+	}
+	if s.newsArticleViewScreen != nil {
+		s.newsArticleViewScreen.SetSize(w, h)
 	}
 	if s.newsBundleFormScreen != nil {
 		s.newsBundleFormScreen.SetSize(w, h)
@@ -179,6 +185,7 @@ func isServerScreen(screen Screen) bool {
 	case ScreenServerUI,
 		ScreenNews,
 		ScreenNewsArticlePost,
+		ScreenNewsArticleView,
 		ScreenNewsBundleForm,
 		ScreenNewsCategoryForm,
 		ScreenLegacyNewsPost,
