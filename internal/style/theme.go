@@ -2,16 +2,16 @@ package style
 
 import (
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/exp/charmtone"
 )
 
 // Theme defines the color palette for the application UI.
-// Use semantic color names that describe the purpose, not the color itself.
+// Uses the CharmTone color palette from github.com/charmbracelet/x/exp/charmtone
 type Theme struct {
 	Name string
 
 	// Text colors
-	TextMuted    lipgloss.Color // Muted/de-emphasized text (join/leave messages, stats, empty states)
-	TextDisabled lipgloss.Color // Disabled items
+	TextMuted lipgloss.Color // Muted/de-emphasized text (join/leave messages, stats, empty states)
 
 	// Highlight/accent colors
 	Highlight lipgloss.Color // Primary highlight (titles, active items, categories)
@@ -29,7 +29,7 @@ type Theme struct {
 	BorderMuted   lipgloss.Color // Inactive/scrollback borders
 
 	// Background colors
-	BackgroundPanel lipgloss.Color // Panel/subscreen backgrounds
+	BackgroundPanel lipgloss.AdaptiveColor // Panel/subscreen backgrounds
 
 	// Dialog/Modal
 	DialogBorder lipgloss.Color // Modal border color
@@ -43,31 +43,20 @@ type Theme struct {
 }
 
 // CurrentTheme is the active theme used throughout the application.
-var CurrentTheme = DefaultTheme()
-
-// DefaultTheme returns the classic Mobius theme with the original color scheme.
-func DefaultTheme() Theme {
-	return Theme{
-		Name:            "Classic",
-		TextMuted:       lipgloss.Color("241"),
-		TextDisabled:    lipgloss.Color("240"),
-		Highlight:       lipgloss.Color("170"), // Fuchsia
-		Accent:          lipgloss.Color("214"), // Orange
-		Success:         lipgloss.Color("2"),   // Green
-		Error:           lipgloss.Color("1"),   // Red
-		Admin:           lipgloss.Color("196"), // Bright red
-		BorderPrimary:   lipgloss.Color("63"),  // Cyan
-		BorderMuted:     lipgloss.Color("236"), // Dark grey
-		BackgroundPanel: lipgloss.Color("0"),
-		DialogBorder:    lipgloss.Color("#874BFD"),
-		GradientStart:   lipgloss.Color("196"),
-		GradientEnd:     lipgloss.Color("#BF281B"),
-		Subtle:          lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"},
-	}
-}
-
-// SetTheme updates the current theme and regenerates all styles.
-func SetTheme(t Theme) {
-	CurrentTheme = t
-	regenerateStyles()
+// Uses the CharmTone color palette as the default and only theme.
+var CurrentTheme = Theme{
+	Name:            "CharmTone",
+	TextMuted:       lipgloss.Color(charmtone.Squid.Hex()),
+	Highlight:       lipgloss.Color(charmtone.Charple.Hex()),
+	Accent:          lipgloss.Color(charmtone.Dolly.Hex()),
+	Success:         lipgloss.Color(charmtone.Guac.Hex()),
+	Error:           lipgloss.Color(charmtone.Sriracha.Hex()),
+	Admin:           lipgloss.Color(charmtone.Sriracha.Hex()),
+	BorderPrimary:   lipgloss.Color(charmtone.Charple.Hex()),
+	BorderMuted:     lipgloss.Color(charmtone.Charcoal.Hex()),
+	BackgroundPanel: lipgloss.AdaptiveColor{Light: charmtone.Butter.Hex(), Dark: charmtone.Pepper.Hex()},
+	DialogBorder:    lipgloss.Color(charmtone.Charple.Hex()),
+	GradientStart:   lipgloss.Color(charmtone.Coral.Hex()),
+	GradientEnd:     lipgloss.Color(charmtone.Sriracha.Hex()),
+	Subtle:          lipgloss.AdaptiveColor{Light: charmtone.Ash.Hex(), Dark: charmtone.Charcoal.Hex()},
 }

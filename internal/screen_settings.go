@@ -64,7 +64,6 @@ type SettingsSavedMsg struct {
 	DownloadDir  string
 	EnableBell   bool
 	EnableSounds bool
-	Theme        string
 }
 
 type SettingsCancelledMsg struct{}
@@ -84,17 +83,10 @@ type SettingsScreen struct {
 	downloadDir  string
 	enableBell   bool
 	enableSounds bool
-	theme        string
 }
 
 // buildSettingsForm creates a Huh form for editing settings
-func buildSettingsForm(username, iconID, tracker, downloadDir, theme *string, enableBell, enableSounds *bool) *huh.Form {
-	// Build theme options from available themes
-	themeOptions := make([]huh.Option[string], 0)
-	for _, name := range style.ThemeNames() {
-		themeOptions = append(themeOptions, huh.NewOption(name, name))
-	}
-
+func buildSettingsForm(username, iconID, tracker, downloadDir *string, enableBell, enableSounds *bool) *huh.Form {
 	return huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().
@@ -121,12 +113,6 @@ func buildSettingsForm(username, iconID, tracker, downloadDir, theme *string, en
 				Placeholder("Download Directory").
 				Value(downloadDir),
 
-			huh.NewSelect[string]().
-				Key("theme").
-				Title("Theme").
-				Options(themeOptions...).
-				Value(theme),
-
 			huh.NewConfirm().
 				Key("enableBell").
 				Title("Terminal Bell").
@@ -151,12 +137,6 @@ func buildSettingsForm(username, iconID, tracker, downloadDir, theme *string, en
 
 // NewSettingsScreen creates a new settings screen with current settings values
 func NewSettingsScreen(prefs *Settings, m *Model) (*SettingsScreen, tea.Cmd) {
-	// Default to Classic theme if not set
-	theme := prefs.Theme
-	if theme == "" {
-		theme = "Classic"
-	}
-
 	screen := &SettingsScreen{
 		width:        m.width,
 		height:       m.height,
@@ -169,10 +149,9 @@ func NewSettingsScreen(prefs *Settings, m *Model) (*SettingsScreen, tea.Cmd) {
 		downloadDir:  prefs.DownloadDir,
 		enableBell:   prefs.EnableBell,
 		enableSounds: prefs.EnableSounds,
-		theme:        theme,
 	}
 
-	screen.form = buildSettingsForm(&screen.username, &screen.iconID, &screen.tracker, &screen.downloadDir, &screen.theme, &screen.enableBell, &screen.enableSounds)
+	screen.form = buildSettingsForm(&screen.username, &screen.iconID, &screen.tracker, &screen.downloadDir, &screen.enableBell, &screen.enableSounds)
 
 	return screen, screen.form.Init()
 }
@@ -230,7 +209,6 @@ func (s *SettingsScreen) handleSubmit() tea.Cmd {
 	downloadDir := s.downloadDir
 	enableBell := s.enableBell
 	enableSounds := s.enableSounds
-	theme := s.theme
 
 	iconID := 0
 	if id, err := strconv.Atoi(s.iconID); err == nil {
@@ -245,7 +223,6 @@ func (s *SettingsScreen) handleSubmit() tea.Cmd {
 			DownloadDir:  downloadDir,
 			EnableBell:   enableBell,
 			EnableSounds: enableSounds,
-			Theme:        theme,
 		}
 	}
 }

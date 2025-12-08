@@ -261,7 +261,6 @@ func (m *Model) handleSettingsSavedMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.prefs.DownloadDir = settingsMsg.DownloadDir
 	m.prefs.EnableBell = settingsMsg.EnableBell
 	m.prefs.EnableSounds = settingsMsg.EnableSounds
-	m.prefs.Theme = settingsMsg.Theme
 
 	// Update the active download directory
 	m.downloadDir = m.prefs.DownloadDir
@@ -270,9 +269,6 @@ func (m *Model) handleSettingsSavedMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.soundPlayer != nil {
 		m.soundPlayer.SetEnabled(m.prefs.EnableSounds)
 	}
-
-	// Apply the selected theme
-	style.SetTheme(style.GetThemeByName(m.prefs.Theme))
 
 	// Save to file
 	if err := m.savePreferences(); err != nil {
