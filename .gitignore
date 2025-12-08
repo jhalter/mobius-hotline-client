@@ -4,6 +4,7 @@
 *.dll
 *.so
 *.dylib
+mobius-hotline-client
 
 # Test binary, built with `go test -c`
 *.test
@@ -27,6 +28,7 @@ dist/*
 
 # Ignore the bind mounted config directory
 config/*
+mobius-client-config.yaml
 
 .claude
 CLAUDE.md

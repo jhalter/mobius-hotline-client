@@ -23,10 +23,17 @@ var logLevels = map[string]log.Level{
 }
 
 func main() {
-	configDir := flag.String("config", defaultConfigPath(), "Path to config root")
-	logLevel := flag.String("log-level", "info", "Log level")
+	configPath := flag.String("config", defaultConfigPath(), "Path to config file")
+	logLevel := flag.String("log-level", "info", "Log level (debug, info)")
 
 	flag.Parse()
+
+	// Check if config file exists before proceeding
+	if _, err := os.Stat(*configPath); os.IsNotExist(err) {
+		fmt.Fprintf(os.Stderr, "Error: config file not found: %s\n\n", *configPath)
+		flag.Usage()
+		os.Exit(1)
+	}
 
 	// init DebugBuffer
 	db := &internal.DebugBuffer{}
@@ -41,7 +48,7 @@ func main() {
 	logger := slog.New(logHandler)
 	logger.Info("Started Mobius client", "Version", version)
 
-	model := internal.NewModel(*configDir, logger, db)
+	model := internal.NewModel(*configPath, logger, db)
 	if err := model.Start(); err != nil {
 		logger.Error("Application error", "err", err)
 		os.Exit(1)
