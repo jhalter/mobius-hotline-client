@@ -34,7 +34,7 @@ var (
 	CategoryStyle      lipgloss.Style
 	TitleStyle         lipgloss.Style
 	DialogBoxStyle     lipgloss.Style
-	Subtle             compat.AdaptiveColor
+	Subtle             color.Color
 	Blends             []color.Color
 	FormTheme          huh.Theme
 	ListItemStyles     list.DefaultItemStyles
