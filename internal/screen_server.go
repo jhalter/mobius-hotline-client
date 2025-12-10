@@ -58,13 +58,20 @@ type serverScreenKeyMap struct {
 }
 
 func (k serverScreenKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.MessageBoard, k.News, k.Files, k.Logs, k.Accounts, k.Disconnect}
+	bindings := []key.Binding{k.MessageBoard}
+	if k.News.Enabled() {
+		bindings = append(bindings, k.News)
+	}
+	bindings = append(bindings, k.Files, k.Logs)
+	if k.Accounts.Enabled() {
+		bindings = append(bindings, k.Accounts)
+	}
+	bindings = append(bindings, k.Disconnect)
+	return bindings
 }
 
 func (k serverScreenKeyMap) FullHelp() [][]key.Binding {
-	return [][]key.Binding{
-		{k.MessageBoard, k.News, k.Files, k.Logs, k.Accounts, k.Disconnect},
-	}
+	return [][]key.Binding{k.ShortHelp()}
 }
 
 // ServerScreen represents the main server UI after connecting
@@ -312,7 +319,10 @@ func (s *ServerScreen) handleKeys(msg tea.KeyMsg) (ScreenModel, tea.Cmd) {
 		return s, nil
 
 	case "ctrl+n":
-		return s, func() tea.Msg { return ServerOpenNewsMsg{} }
+		if s.keys.News.Enabled() {
+			return s, func() tea.Msg { return ServerOpenNewsMsg{} }
+		}
+		return s, nil
 
 	case "ctrl+b":
 		return s, func() tea.Msg { return ServerOpenMessageBoardMsg{} }
@@ -321,7 +331,10 @@ func (s *ServerScreen) handleKeys(msg tea.KeyMsg) (ScreenModel, tea.Cmd) {
 		return s, func() tea.Msg { return ServerOpenFilesMsg{} }
 
 	case "ctrl+a":
-		return s, func() tea.Msg { return ServerOpenAccountsMsg{} }
+		if s.keys.Accounts.Enabled() {
+			return s, func() tea.Msg { return ServerOpenAccountsMsg{} }
+		}
+		return s, nil
 
 	case "ctrl+t":
 		return s, func() tea.Msg { return ServerOpenTasksMsg{} }
@@ -476,5 +489,5 @@ func (s *ServerScreen) rebuildChatContent() {
 // SetUserAccess updates keybindings based on user access permissions
 func (s *ServerScreen) SetUserAccess(access hotline.AccessBitmap) {
 	s.keys.News.SetEnabled(access.IsSet(hotline.AccessNewsReadArt))
-	s.keys.Accounts.SetEnabled(access.IsSet(hotline.AccessModifyUser))
+	s.keys.Accounts.SetEnabled(access.IsSet(hotline.AccessOpenUser))
 }

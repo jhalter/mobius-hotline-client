@@ -133,7 +133,7 @@ func (m *Model) handleErrorMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.CurrentScreen() == ScreenLoading {
 		m.PopScreen()
 	}
-	m.modalScreen = NewModalScreen(ModalTypeError, "Error", errorMessage.text, []string{"Close"}, m)
+	m.modalScreen = NewModalScreen(ModalTypeError, "⚠️  Error", errorMessage.text, []string{"Close"}, m)
 	m.PushScreen(ScreenModal)
 	return m, m.modalScreen.Init()
 }
@@ -202,6 +202,7 @@ func (m *Model) handleServerConnectedMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 	session.serverScreen = NewServerScreen(m)
 	session.serverScreen.SetServerName(serverConnected.name)
 	session.serverScreen.SetSize(m.width, m.height)
+	session.serverScreen.SetUserAccess(session.userAccess)
 	session.serverScreen.FocusChatInput()
 
 	m.NavigateTo(ScreenServerUI)
@@ -647,6 +648,13 @@ func (m *Model) handleAccountListMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	accountListMessage := msg.(accountListMsg)
+
+	// If accounts screen is currently visible (or modal on top), just refresh it
+	if (m.CurrentScreen() == ScreenAccounts || m.CurrentScreen() == ScreenModal) && session.accountsScreen != nil {
+		session.accountsScreen.UpdateAccounts(accountListMessage.accounts)
+		return m, nil
+	}
+
 	session.accountsScreen = NewAccountsScreen(accountListMessage.accounts, session.userAccess, m)
 	m.PushScreen(ScreenAccounts)
 	return m, nil
@@ -1028,24 +1036,67 @@ func (m *Model) handleServerOpenTasksMsg() {
 
 // AccountsScreen message handlers
 
-func (m *Model) handleAccountsSaveMsg(msg AccountsSaveMsg) tea.Cmd {
+func (m *Model) handleAccountEditRequestMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 	session := m.activeSession()
-	// Reset the screen's edit state
-	if session != nil && session.accountsScreen != nil {
-		session.accountsScreen.ResetEditState()
+	if session == nil {
+		return m, nil
 	}
-	m.PopScreen()
-	return m.submitAccountChanges(msg)
+	editMsg := msg.(AccountEditRequestMsg)
+	var cmd tea.Cmd
+	session.accountEditScreen, cmd = NewAccountEditScreen(&editMsg.Account, session.userAccess, m)
+	m.PushScreen(ScreenAccountEdit)
+	return m, cmd
 }
 
-func (m *Model) handleAccountsDeleteMsg(msg AccountsDeleteMsg) tea.Cmd {
+func (m *Model) handleAccountNewRequestMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 	session := m.activeSession()
-	// Reset the screen's edit state
-	if session != nil && session.accountsScreen != nil {
-		session.accountsScreen.ResetEditState()
+	if session == nil {
+		return m, nil
 	}
+	var cmd tea.Cmd
+	session.accountEditScreen, cmd = NewAccountEditScreen(nil, session.userAccess, m)
+	m.PushScreen(ScreenAccountEdit)
+	return m, cmd
+}
+
+func (m *Model) handleAccountEditCancelledMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.PopScreen()
-	return m.deleteAccount(msg.Login)
+	return m, nil
+}
+
+func (m *Model) handleAccountsSaveMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
+	saveMsg := msg.(AccountsSaveMsg)
+	m.PopScreen()
+	return m, m.submitAccountChanges(saveMsg)
+}
+
+func (m *Model) handleAccountSaveSuccessMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
+	m.modalScreen = NewModalScreen(ModalTypeGeneric, "Account Saved", "", []string{"Close"}, m)
+	m.PushScreen(ScreenModal)
+	return m, tea.Batch(m.modalScreen.Init(), m.refreshAccountList())
+}
+
+func (m *Model) handleAccountsDeleteMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
+	deleteMsg := msg.(AccountsDeleteMsg)
+	m.PopScreen()
+	return m, m.deleteAccount(deleteMsg.Login)
+}
+
+func (m *Model) handleAccountDeleteSuccessMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
+	m.modalScreen = NewModalScreen(ModalTypeGeneric, "Account Deleted", "", []string{"Close"}, m)
+	m.PushScreen(ScreenModal)
+	return m, tea.Batch(m.modalScreen.Init(), m.refreshAccountList())
+}
+
+func (m *Model) refreshAccountList() tea.Cmd {
+	return func() tea.Msg {
+		session := m.activeSession()
+		if session == nil {
+			return nil
+		}
+		session.hlClient.Send(hotline.NewTransaction(hotline.TranListUsers, [2]byte{}))
+		return nil
+	}
 }
 
 // FilesScreen message handlers

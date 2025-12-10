@@ -3,14 +3,17 @@ package internal
 import (
 	"bufio"
 	"bytes"
+	"cmp"
 	"context"
 	"encoding/binary"
 	"fmt"
 	"io"
+	"slices"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/jhalter/mobius-hotline-client/internal/style"
@@ -32,10 +35,24 @@ type AccountsSaveMsg struct {
 	IsNew           bool
 }
 
+// accountSaveSuccessMsg signals account was saved successfully
+type accountSaveSuccessMsg struct{}
+
+// accountDeleteSuccessMsg signals account was deleted successfully
+type accountDeleteSuccessMsg struct{}
+
 // AccountsDeleteMsg signals user wants to delete an account
 type AccountsDeleteMsg struct {
 	Login string
 }
+
+// AccountEditRequestMsg signals user wants to edit an existing account
+type AccountEditRequestMsg struct {
+	Account accountItem
+}
+
+// AccountNewRequestMsg signals user wants to create a new account
+type AccountNewRequestMsg struct{}
 
 // Access bit definitions organized by category
 var accessBitsByCategory = []struct {
@@ -111,18 +128,27 @@ var accessBitsByCategory = []struct {
 	},
 }
 
-// Focus indices for account editor (beyond checkboxes)
-const (
-	focusLogin = 41 // Login field
-	focusName  = 42 // Display name field
-	focusPass  = 43 // Password field
-)
+// accountsScreenKeyMap defines key bindings for the accounts screen
+type accountsScreenKeyMap struct {
+	New   key.Binding
+	Enter key.Binding
+	Esc   key.Binding
+}
+
+func (k accountsScreenKeyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.New, k.Enter, k.Esc}
+}
+
+func (k accountsScreenKeyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{
+		{k.New, k.Enter, k.Esc},
+	}
+}
 
 // AccountsScreen is a self-contained BubbleTea model for managing user accounts
 type AccountsScreen struct {
 	// Bubble Tea components
-	list     list.Model
-	viewport viewport.Model
+	list list.Model
 
 	// Screen dimensions
 	width, height int
@@ -131,45 +157,61 @@ type AccountsScreen struct {
 	model *Model
 
 	// Screen-specific state
-	allAccounts      []accountItem        // Complete account dataset
-	selectedAccount  *selectedAccountData // Currently selected account
-	detailFocused    bool                 // true = detail pane focused, false = list pane focused
-	isNewAccount     bool                 // Creating new vs editing existing
-	editedLogin      string               // Working copy of login name
-	editedName       string               // Working copy of display name
-	editedPassword   string               // Working copy of password
-	editedAccessBits hotline.AccessBitmap // Working copy of permissions
-	focusedAccessBit int                  // Currently focused checkbox (0-40, or 41+ for other fields)
-	passwordChanged  bool                 // Track if password was modified
+	allAccounts []accountItem // Complete account dataset
 
 	// User permissions
 	userAccess hotline.AccessBitmap
+
+	// Help system
+	help help.Model
+	keys accountsScreenKeyMap
 }
 
 // NewAccountsScreen creates a new accounts screen with the given account list
 func NewAccountsScreen(accounts []accountItem, userAccess hotline.AccessBitmap, m *Model) *AccountsScreen {
+	slices.SortFunc(accounts, func(a, b accountItem) int {
+		return cmp.Compare(strings.ToLower(a.name), strings.ToLower(b.name))
+	})
+
 	items := make([]list.Item, len(accounts))
 	for i, acct := range accounts {
 		items[i] = acct
 	}
 
-	l := list.New(items, newAccountDelegate(), m.width/2, m.height-10)
-	l.Title = "User Accounts"
+	l := list.New(items, newAccountDelegate(), m.width-4, m.height-10)
+	l.SetShowTitle(false)
 	l.SetFilteringEnabled(true)
 	l.SetShowStatusBar(false)
 	l.SetShowHelp(false)
 	l.DisableQuitKeybindings()
 
-	vp := viewport.New(m.width/2-4, m.height-12)
+	keys := accountsScreenKeyMap{
+		New: key.NewBinding(
+			key.WithKeys("n"),
+			key.WithHelp("n", "new account"),
+		),
+		Enter: key.NewBinding(
+			key.WithKeys("enter"),
+			key.WithHelp("enter", "view/edit"),
+		),
+		Esc: key.NewBinding(
+			key.WithKeys("esc"),
+			key.WithHelp("esc", "close"),
+		),
+	}
+
+	// Configure key availability based on permissions
+	keys.New.SetEnabled(userAccess.IsSet(hotline.AccessCreateUser))
 
 	return &AccountsScreen{
 		list:        l,
-		viewport:    vp,
 		width:       m.width,
 		height:      m.height,
 		model:       m,
 		allAccounts: accounts,
 		userAccess:  userAccess,
+		help:        help.New(),
+		keys:        keys,
 	}
 }
 
@@ -192,426 +234,77 @@ func (s *AccountsScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 		s.SetSize(msg.Width, msg.Height)
 		return s, nil
 
-	// Handle screen messages by delegating to parent methods
 	case AccountsCancelledMsg:
 		s.model.PopScreen()
 		return s, nil
-
-	case AccountsSaveMsg:
-		cmd := s.model.handleAccountsSaveMsg(msg)
-		return s, cmd
-
-	case AccountsDeleteMsg:
-		cmd := s.model.handleAccountsDeleteMsg(msg)
-		return s, cmd
 
 	case tea.KeyMsg:
 		return s.handleKeys(msg)
 	}
 
-	// Delegate to internal components when not editing
-	if s.selectedAccount == nil && !s.isNewAccount {
-		var cmd tea.Cmd
-		s.list, cmd = s.list.Update(msg)
-		return s, cmd
-	}
-
-	return s, nil
+	// Delegate to list component
+	var cmd tea.Cmd
+	s.list, cmd = s.list.Update(msg)
+	return s, cmd
 }
 
 // View renders the screen
 func (s *AccountsScreen) View() string {
-	if s.selectedAccount != nil || s.isNewAccount {
-		return s.renderSplitView()
-	}
-	return s.renderListOnly()
+
+	return style.RenderSubscreen(s.width, s.height, "Accounts",
+		lipgloss.JoinVertical(
+			lipgloss.Left,
+			s.list.View(),
+			" ",
+			lipgloss.JoinHorizontal(
+				lipgloss.Left,
+				s.help.View(s.keys),
+			),
+		),
+	)
+
 }
 
 // SetSize updates dimensions
 func (s *AccountsScreen) SetSize(width, height int) {
 	s.width = width
 	s.height = height
-	s.list.SetSize(width/2, height-10)
-	s.viewport.Width = width/2 - 4
-	s.viewport.Height = height - 12
+	s.list.SetSize(width-4, height-10)
 }
 
-// renderListOnly renders the accounts list without the detail pane
-func (s *AccountsScreen) renderListOnly() string {
-	content := s.list.View()
+// UpdateAccounts refreshes the account list with new data
+func (s *AccountsScreen) UpdateAccounts(accounts []accountItem) {
+	slices.SortFunc(accounts, func(a, b accountItem) int {
+		return cmp.Compare(strings.ToLower(a.name), strings.ToLower(b.name))
+	})
 
-	// Add help text
-	help := "\n\n"
-	if s.userAccess.IsSet(hotline.AccessCreateUser) {
-		help += "n: new account  "
+	items := make([]list.Item, len(accounts))
+	for i, acct := range accounts {
+		items[i] = acct
 	}
-	help += "enter: view/edit  esc: close"
-
-	return style.SubScreenStyle.Render(content + help)
-}
-
-// renderSplitView renders the accounts list alongside the detail pane
-func (s *AccountsScreen) renderSplitView() string {
-	canEdit := s.userAccess.IsSet(hotline.AccessModifyUser) || s.isNewAccount
-
-	// Determine border styles based on focus
-	leftBorderStyle := lipgloss.NormalBorder()
-	rightBorderStyle := lipgloss.NormalBorder()
-	if s.detailFocused {
-		rightBorderStyle = lipgloss.DoubleBorder()
-	} else {
-		leftBorderStyle = lipgloss.DoubleBorder()
-	}
-
-	// Left pane: account list
-	leftPane := lipgloss.NewStyle().
-		Width(s.width / 2).
-		Height(s.height - 10).
-		BorderStyle(leftBorderStyle).
-		BorderRight(true).
-		Render(s.list.View())
-
-	// Right pane: account details
-	var rightContent strings.Builder
-
-	if s.isNewAccount {
-		rightContent.WriteString(style.TitleStyle.Render("New Account"))
-	} else {
-		rightContent.WriteString(style.TitleStyle.Render("Account: " + s.selectedAccount.login))
-	}
-	rightContent.WriteString("\n\n")
-
-	// Account fields
-	loginLabel := "Login: "
-	if s.focusedAccessBit == focusLogin {
-		loginLabel = "> " + loginLabel
-	} else {
-		loginLabel = "  " + loginLabel
-	}
-	rightContent.WriteString(loginLabel + s.editedLogin + "\n")
-
-	nameLabel := "Name: "
-	if s.focusedAccessBit == focusName {
-		nameLabel = "> " + nameLabel
-	} else {
-		nameLabel = "  " + nameLabel
-	}
-	rightContent.WriteString(nameLabel + s.editedName + "\n")
-
-	passLabel := "Password: "
-	if s.focusedAccessBit == focusPass {
-		passLabel = "> " + passLabel
-	} else {
-		passLabel = "  " + passLabel
-	}
-	passDisplay := s.editedPassword
-	if len(passDisplay) == 0 {
-		passDisplay = "(not set)"
-	} else {
-		passDisplay = strings.Repeat("*", len(passDisplay))
-	}
-	rightContent.WriteString(passLabel + passDisplay + "\n\n")
-
-	// Access permissions by category
-	focusIndex := 0
-	for _, category := range accessBitsByCategory {
-		rightContent.WriteString(style.CategoryStyle.Render(category.category))
-		rightContent.WriteString("\n")
-
-		for _, bit := range category.bits {
-			checkbox := "[ ]"
-			if s.editedAccessBits.IsSet(bit.bit) {
-				checkbox = "[x]"
-			}
-
-			prefix := "  "
-			if focusIndex == s.focusedAccessBit {
-				prefix = "> "
-			}
-
-			itemStyle := lipgloss.NewStyle().Bold(true)
-
-			rightContent.WriteString(itemStyle.Render(prefix + checkbox + " " + bit.name))
-			rightContent.WriteString("\n")
-
-			focusIndex++
-		}
-		rightContent.WriteString("\n")
-	}
-
-	// Set viewport content
-	s.viewport.SetContent(rightContent.String())
-
-	// Help text
-	helpText := "\n"
-	if canEdit {
-		helpText += "tab: toggle focus  up/down: navigate  space: toggle  enter: save  pgup/pgdn: scroll"
-		if !s.isNewAccount && s.userAccess.IsSet(hotline.AccessDeleteUser) {
-			helpText += "  ctrl+d: delete"
-		}
-		helpText += "  esc: cancel"
-	} else {
-		helpText += "tab: toggle focus  esc: close (read-only)"
-	}
-
-	// Render right pane with viewport and border
-	rightPane := lipgloss.NewStyle().
-		Width(s.width/2 - 2).
-		Height(s.height - 10).
-		BorderStyle(rightBorderStyle).
-		BorderLeft(true).
-		Padding(1).
-		Render(s.viewport.View())
-
-	splitView := lipgloss.JoinHorizontal(
-		lipgloss.Left,
-		leftPane,
-		rightPane,
-	)
-
-	return style.SubScreenStyle.Render(splitView + helpText)
+	s.list.SetItems(items)
+	s.allAccounts = accounts
 }
 
 // handleKeys handles keyboard input
 func (s *AccountsScreen) handleKeys(msg tea.KeyMsg) (ScreenModel, tea.Cmd) {
-	// List-only view
-	if s.selectedAccount == nil && !s.isNewAccount {
-		switch msg.String() {
-		case "n":
-			if s.userAccess.IsSet(hotline.AccessCreateUser) {
-				s.isNewAccount = true
-				s.editedLogin = ""
-				s.editedName = ""
-				s.editedPassword = ""
-				s.editedAccessBits = hotline.AccessBitmap{}
-				s.focusedAccessBit = focusLogin
-				s.detailFocused = true
-				return s, nil
-			}
-		case "enter":
-			if item, ok := s.list.SelectedItem().(accountItem); ok {
-				s.selectedAccount = &selectedAccountData{
-					login:          item.login,
-					name:           item.name,
-					originalAccess: item.access,
-					hasPassword:    item.hasPass,
-				}
-				s.editedLogin = item.login
-				s.editedName = item.name
-				s.editedPassword = ""
-				s.editedAccessBits = item.access
-				s.passwordChanged = false
-				s.focusedAccessBit = 0
-				s.detailFocused = true
-				return s, nil
-			}
-		case "esc":
-			return s, func() tea.Msg { return AccountsCancelledMsg{} }
-		default:
-			var cmd tea.Cmd
-			s.list, cmd = s.list.Update(msg)
-			return s, cmd
-		}
-		return s, nil
-	}
-
-	// Split view (editing account)
-	canEdit := s.userAccess.IsSet(hotline.AccessModifyUser) || s.isNewAccount
-
 	switch msg.String() {
-	case "tab":
-		// Toggle focus between list and detail panes
-		s.detailFocused = !s.detailFocused
-		return s, nil
-
-	case "esc":
-		s.selectedAccount = nil
-		s.isNewAccount = false
-		s.detailFocused = false
-		return s, nil
-
-	case "up":
-		// Route based on focus
-		if !s.detailFocused {
-			// List focused - pass to list
-			var cmd tea.Cmd
-			s.list, cmd = s.list.Update(msg)
-			return s, cmd
+	case "n":
+		if s.userAccess.IsSet(hotline.AccessCreateUser) {
+			return s, func() tea.Msg { return AccountNewRequestMsg{} }
 		}
-		// Detail focused - navigate checkboxes/fields
-		if canEdit && s.focusedAccessBit > 0 {
-			s.focusedAccessBit--
-			s.scrollToFocusedCheckbox()
-		}
-		return s, nil
-
-	case "down":
-		// Route based on focus
-		if !s.detailFocused {
-			// List focused - pass to list
-			var cmd tea.Cmd
-			s.list, cmd = s.list.Update(msg)
-			return s, cmd
-		}
-		// Detail focused - navigate checkboxes/fields
-		if canEdit && s.focusedAccessBit < focusPass {
-			s.focusedAccessBit++
-			s.scrollToFocusedCheckbox()
-		}
-		return s, nil
-
-	case "pgup":
-		// Manual viewport scrolling when detail pane focused
-		if s.detailFocused {
-			s.viewport.HalfPageUp()
-		}
-		return s, nil
-
-	case "pgdown":
-		// Manual viewport scrolling when detail pane focused
-		if s.detailFocused {
-			s.viewport.HalfPageDown()
-		}
-		return s, nil
-
-	case " ", "space":
-		if canEdit && s.detailFocused {
-			// Map focus index to actual access bit
-			focusIndex := 0
-			for _, category := range accessBitsByCategory {
-				for _, bit := range category.bits {
-					if focusIndex == s.focusedAccessBit {
-						// Toggle the checkbox
-						if s.editedAccessBits.IsSet(bit.bit) {
-							s.editedAccessBits[bit.bit/8] &^= 1 << uint(7-bit.bit%8)
-						} else {
-							s.editedAccessBits.Set(bit.bit)
-						}
-						return s, nil
-					}
-					focusIndex++
-				}
-			}
-		}
-		return s, nil
-
 	case "enter":
-		// If list focused, select account
-		if !s.detailFocused {
-			if item, ok := s.list.SelectedItem().(accountItem); ok {
-				s.selectedAccount = &selectedAccountData{
-					login:          item.login,
-					name:           item.name,
-					originalAccess: item.access,
-					hasPassword:    item.hasPass,
-				}
-				s.editedLogin = item.login
-				s.editedName = item.name
-				s.editedPassword = ""
-				s.editedAccessBits = item.access
-				s.passwordChanged = false
-				s.focusedAccessBit = 0
-				s.detailFocused = true
-				return s, nil
-			}
+		if item, ok := s.list.SelectedItem().(accountItem); ok {
+			return s, func() tea.Msg { return AccountEditRequestMsg{Account: item} }
 		}
-		// If detail focused and can edit, submit changes
-		if canEdit && s.detailFocused {
-			return s, func() tea.Msg {
-				return AccountsSaveMsg{
-					Login:           s.editedLogin,
-					Name:            s.editedName,
-					Password:        s.editedPassword,
-					PasswordChanged: s.passwordChanged,
-					AccessBits:      s.editedAccessBits,
-					IsNew:           s.isNewAccount,
-				}
-			}
-		}
-		return s, nil
-
-	case "ctrl+d":
-		if !s.isNewAccount && s.userAccess.IsSet(hotline.AccessDeleteUser) && s.detailFocused {
-			return s, func() tea.Msg {
-				return AccountsDeleteMsg{Login: s.selectedAccount.login}
-			}
-		}
-		return s, nil
-
+	case "esc":
+		return s, func() tea.Msg { return AccountsCancelledMsg{} }
 	default:
-		// Handle text input for focused fields (only when detail pane focused)
-		if canEdit && s.detailFocused {
-			switch s.focusedAccessBit {
-			case focusLogin:
-				if msg.Type == tea.KeyRunes {
-					s.editedLogin += string(msg.Runes)
-				} else if msg.Type == tea.KeyBackspace && len(s.editedLogin) > 0 {
-					s.editedLogin = s.editedLogin[:len(s.editedLogin)-1]
-				}
-			case focusName:
-				if msg.Type == tea.KeyRunes {
-					s.editedName += string(msg.Runes)
-				} else if msg.Type == tea.KeyBackspace && len(s.editedName) > 0 {
-					s.editedName = s.editedName[:len(s.editedName)-1]
-				}
-			case focusPass:
-				if msg.Type == tea.KeyRunes {
-					s.editedPassword += string(msg.Runes)
-					s.passwordChanged = true
-				} else if msg.Type == tea.KeyBackspace && len(s.editedPassword) > 0 {
-					s.editedPassword = s.editedPassword[:len(s.editedPassword)-1]
-					s.passwordChanged = true
-				}
-			}
-		}
+		var cmd tea.Cmd
+		s.list, cmd = s.list.Update(msg)
+		return s, cmd
 	}
-
 	return s, nil
-}
-
-// scrollToFocusedCheckbox scrolls the viewport to keep the focused item visible
-func (s *AccountsScreen) scrollToFocusedCheckbox() {
-	// Calculate line position of focused item
-	// Account for header (3 lines), Login/Name/Password fields (5 lines including blank)
-	const headerLines = 3
-	const accountFieldLines = 5
-
-	// Count lines up to focused item
-	linePos := headerLines + accountFieldLines
-
-	// If focused on checkbox (0-40), calculate its position
-	if s.focusedAccessBit < 41 {
-		// Count through categories to find line position
-		currentBit := 0
-		for _, category := range accessBitsByCategory {
-			linePos++ // Category header line
-			for range category.bits {
-				if currentBit == s.focusedAccessBit {
-					// Center the focused item in viewport
-					centerOffset := s.viewport.Height / 2
-					targetYOffset := linePos - centerOffset
-					if targetYOffset < 0 {
-						targetYOffset = 0
-					}
-					s.viewport.SetYOffset(targetYOffset)
-					return
-				}
-				linePos++ // Checkbox line
-				currentBit++
-			}
-			linePos++ // Blank line after category
-		}
-	} else {
-		// Focused on text fields at top - scroll to top
-		s.viewport.SetYOffset(0)
-	}
-}
-
-// ResetEditState resets the editing state after save/delete operations
-func (s *AccountsScreen) ResetEditState() {
-	s.selectedAccount = nil
-	s.isNewAccount = false
-	s.detailFocused = false
 }
 
 // HandleListUsers handles the transaction response for listing user accounts
@@ -721,7 +414,7 @@ func (m *Model) submitAccountChanges(msg AccountsSaveMsg) tea.Cmd {
 
 		m.logger.Info("Account updated successfully")
 
-		return nil
+		return accountSaveSuccessMsg{}
 	}
 }
 
@@ -732,13 +425,10 @@ func (m *Model) deleteAccount(login string) tea.Cmd {
 		if session == nil {
 			return errorMsg{text: "No active server connection"}
 		}
-		// For delete, send only FieldData with the login
-		loginData := hotline.EncodeString([]byte(login))
-
 		if err := session.hlClient.Send(hotline.NewTransaction(
-			hotline.TranUpdateUser,
+			hotline.TranDeleteUser,
 			[2]byte{},
-			hotline.NewField(hotline.FieldData, loginData),
+			hotline.NewField(hotline.FieldUserLogin, hotline.EncodeString([]byte(login))),
 		)); err != nil {
 			m.logger.Error("Error deleting account", "err", err)
 			return errorMsg{text: fmt.Sprintf("Error deleting account: %v", err)}
@@ -746,6 +436,6 @@ func (m *Model) deleteAccount(login string) tea.Cmd {
 
 		m.logger.Info("Account deleted successfully")
 
-		return nil
+		return accountDeleteSuccessMsg{}
 	}
 }

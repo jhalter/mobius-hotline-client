@@ -42,6 +42,7 @@ type ServerSession struct {
 	newsCategoryFormScreen *NewsCategoryFormScreen
 	legacyNewsPostScreen   *LegacyNewsPostScreen
 	accountsScreen         *AccountsScreen
+	accountEditScreen      *AccountEditScreen
 	filesScreen            *FilesScreen
 	messageBoardScreen     *MessageBoardScreen
 	composeMessageScreen   *ComposeMessageScreen
@@ -118,6 +119,8 @@ func (s *ServerSession) currentScreenModel() ScreenModel {
 		return s.legacyNewsPostScreen
 	case ScreenAccounts:
 		return s.accountsScreen
+	case ScreenAccountEdit:
+		return s.accountEditScreen
 	case ScreenFiles:
 		return s.filesScreen
 	case ScreenMessageBoard:
@@ -153,6 +156,9 @@ func (s *ServerSession) resizeAllScreens(w, h int) {
 	}
 	if s.accountsScreen != nil {
 		s.accountsScreen.SetSize(w, h)
+	}
+	if s.accountEditScreen != nil {
+		s.accountEditScreen.SetSize(w, h)
 	}
 	if s.filesScreen != nil {
 		s.filesScreen.SetSize(w, h)
@@ -192,6 +198,7 @@ func isServerScreen(screen Screen) bool {
 		ScreenMessageBoard,
 		ScreenFiles,
 		ScreenAccounts,
+		ScreenAccountEdit,
 		ScreenComposeMessage:
 		return true
 	}

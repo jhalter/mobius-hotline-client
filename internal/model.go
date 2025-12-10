@@ -48,6 +48,7 @@ const (
 	ScreenModal
 	ScreenTasks
 	ScreenAccounts
+	ScreenAccountEdit
 	ScreenComposeMessage
 	ScreenFilePicker
 	ScreenLoading
@@ -402,6 +403,13 @@ func (m *Model) Init() tea.Cmd {
 	m.registerHandler(newsArticleDataMsg{}, m.handleNewsArticleDataMsg)
 	m.registerHandler(fileInfoMsg{}, m.handleFileInfoMsg)
 	m.registerHandler(accountListMsg{}, m.handleAccountListMsg)
+	m.registerHandler(AccountEditRequestMsg{}, m.handleAccountEditRequestMsg)
+	m.registerHandler(AccountNewRequestMsg{}, m.handleAccountNewRequestMsg)
+	m.registerHandler(AccountEditCancelledMsg{}, m.handleAccountEditCancelledMsg)
+	m.registerHandler(AccountsSaveMsg{}, m.handleAccountsSaveMsg)
+	m.registerHandler(accountSaveSuccessMsg{}, m.handleAccountSaveSuccessMsg)
+	m.registerHandler(AccountsDeleteMsg{}, m.handleAccountsDeleteMsg)
+	m.registerHandler(accountDeleteSuccessMsg{}, m.handleAccountDeleteSuccessMsg)
 	m.registerHandler(taskProgressMsg{}, m.handleTaskProgressMsg)
 	m.registerHandler(taskStatusMsg{}, m.handleTaskStatusMsg)
 	m.registerHandler(downloadReplyMsg{}, m.handleDownloadReplyMsg)
