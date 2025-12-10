@@ -99,9 +99,9 @@ func (s *LogsScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 	return s, cmd
 }
 
-// View implements tea.Model
-func (s *LogsScreen) View() string {
-	return style.RenderSubscreen(s.width, s.height, "Logs",
+// View implements ScreenModel
+func (s *LogsScreen) View() tea.View {
+	content := style.RenderSubscreen(s.width, s.height, "Logs",
 		lipgloss.JoinVertical(
 			lipgloss.Left,
 			s.viewport.View(),
@@ -114,6 +114,7 @@ func (s *LogsScreen) View() string {
 			),
 		),
 	)
+	return tea.NewView(content)
 }
 
 // SetSize updates dimensions

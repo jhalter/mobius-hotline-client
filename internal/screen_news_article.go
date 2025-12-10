@@ -148,19 +148,19 @@ func (s *NewsArticlePostScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 	return s, cmd
 }
 
-// View implements tea.Model
-func (s *NewsArticlePostScreen) View() string {
+// View implements ScreenModel
+func (s *NewsArticlePostScreen) View() tea.View {
 	title := "New Article"
 	if s.parentID != 0 {
 		title = "Reply to Article"
 	}
 
-	return style.RenderSubscreen(
+	return tea.NewView(style.RenderSubscreen(
 		s.width,
 		s.height,
 		title,
 		s.form.View(),
-	)
+	))
 }
 
 // SetSize updates the screen dimensions

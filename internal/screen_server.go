@@ -203,7 +203,7 @@ func (s *ServerScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 }
 
 // View renders the screen
-func (s *ServerScreen) View() string {
+func (s *ServerScreen) View() tea.View {
 	// Shortcuts
 	shortcuts := s.help.View(s.keys)
 
@@ -266,7 +266,7 @@ func (s *ServerScreen) View() string {
 		BorderForeground(style.CurrentTheme.BorderPrimary).
 		Render(s.userViewport.View())
 
-	return lipgloss.JoinVertical(
+	content := lipgloss.JoinVertical(
 		lipgloss.Left,
 		style.ServerTitleStyle.Render(fmt.Sprintf("Mobius - Connected to %s", s.serverName)),
 		shortcuts,
@@ -276,6 +276,7 @@ func (s *ServerScreen) View() string {
 			lipgloss.JoinVertical(lipgloss.Left, userView, s.model.renderTaskWidget()),
 		),
 	)
+	return tea.NewView(content)
 }
 
 // SetSize updates dimensions

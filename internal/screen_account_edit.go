@@ -210,7 +210,7 @@ func (s *AccountEditScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 }
 
 // View renders the screen
-func (s *AccountEditScreen) View() string {
+func (s *AccountEditScreen) View() tea.View {
 	var title string
 	if s.isNewAccount {
 		title = "New Account"
@@ -218,8 +218,9 @@ func (s *AccountEditScreen) View() string {
 		title = fmt.Sprintf("Edit Account: %s", s.originalLogin)
 	}
 
-	return style.RenderSubscreen(s.width, s.height, title,
+	content := style.RenderSubscreen(s.width, s.height, title,
 		s.form.View()+"\n"+s.help.View(s.keys))
+	return tea.NewView(content)
 }
 
 // SetSize updates dimensions

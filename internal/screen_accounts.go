@@ -249,9 +249,8 @@ func (s *AccountsScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 }
 
 // View renders the screen
-func (s *AccountsScreen) View() string {
-
-	return style.RenderSubscreen(s.width, s.height, "Accounts",
+func (s *AccountsScreen) View() tea.View {
+	content := style.RenderSubscreen(s.width, s.height, "Accounts",
 		lipgloss.JoinVertical(
 			lipgloss.Left,
 			s.list.View(),
@@ -262,7 +261,7 @@ func (s *AccountsScreen) View() string {
 			),
 		),
 	)
-
+	return tea.NewView(content)
 }
 
 // SetSize updates dimensions

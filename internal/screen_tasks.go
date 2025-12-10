@@ -92,8 +92,8 @@ func (s *TasksScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 	return s, nil
 }
 
-// View implements tea.Model
-func (s *TasksScreen) View() string {
+// View implements ScreenModel
+func (s *TasksScreen) View() tea.View {
 	activeTasks := s.model.taskManager.GetActive()
 	completedTasks := s.model.taskManager.GetCompleted(10)
 
@@ -132,7 +132,7 @@ func (s *TasksScreen) View() string {
 	b.WriteString("\n")
 	b.WriteString(s.help.View(s.keys))
 
-	return style.RenderSubscreen(s.width, s.height, "Tasks", b.String())
+	return tea.NewView(style.RenderSubscreen(s.width, s.height, "Tasks", b.String()))
 }
 
 // SetSize updates dimensions

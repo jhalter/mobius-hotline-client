@@ -388,8 +388,8 @@ func (s *JoinServerScreen) handleSubmit() tea.Cmd {
 	}
 }
 
-// View implements tea.Model
-func (s *JoinServerScreen) View() string {
+// View implements ScreenModel
+func (s *JoinServerScreen) View() tea.View {
 	var title string
 	switch s.mode {
 	case JoinServerModeEditBookmark:
@@ -407,7 +407,7 @@ func (s *JoinServerScreen) View() string {
 		s.help.View(s.keys),
 	)
 
-	return style.RenderSubscreen(s.width, s.height, title, content)
+	return tea.NewView(style.RenderSubscreen(s.width, s.height, title, content))
 }
 
 // SetSize updates the screen dimensions

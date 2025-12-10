@@ -384,13 +384,13 @@ func (s *NewsScreen) handleKeys(msg tea.KeyPressMsg) (ScreenModel, tea.Cmd) {
 	return s, cmd
 }
 
-// View implements tea.Model
-func (s *NewsScreen) View() string {
+// View implements ScreenModel
+func (s *NewsScreen) View() tea.View {
 	// Set news list dimensions
 	s.list.SetSize(s.width-10, s.height-10)
 
 	// Place modal centered with dim gray background
-	return lipgloss.Place(
+	content := lipgloss.Place(
 		s.width,
 		s.height,
 		lipgloss.Center,
@@ -404,6 +404,7 @@ func (s *NewsScreen) View() string {
 		),
 		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background(style.CurrentTheme.BorderMuted)),
 	)
+	return tea.NewView(content)
 }
 
 // SetSize updates the screen dimensions

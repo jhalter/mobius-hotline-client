@@ -92,11 +92,11 @@ func (s *TrackerScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 	return s, cmd
 }
 
-// View implements tea.Model
-func (s *TrackerScreen) View() string {
+// View implements ScreenModel
+func (s *TrackerScreen) View() tea.View {
 	s.list.SetSize(s.width, s.height-6)
 
-	return style.RenderSubscreen(s.width, s.height, "Tracker Servers", s.list.View())
+	return tea.NewView(style.RenderSubscreen(s.width, s.height, "Tracker Servers", s.list.View()))
 }
 
 // SetSize updates the screen dimensions

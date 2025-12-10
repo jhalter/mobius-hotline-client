@@ -148,11 +148,11 @@ func (s *BookmarkScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 	return s, cmd
 }
 
-// View implements tea.Model
-func (s *BookmarkScreen) View() string {
+// View implements ScreenModel
+func (s *BookmarkScreen) View() tea.View {
 	s.list.SetSize(s.width-10, s.height-10)
 
-	return style.RenderSubscreen(s.width, s.height, "Bookmarks", s.list.View())
+	return tea.NewView(style.RenderSubscreen(s.width, s.height, "Bookmarks", s.list.View()))
 }
 
 // SetSize updates the screen dimensions

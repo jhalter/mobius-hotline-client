@@ -229,15 +229,15 @@ func (s *SettingsScreen) handleSubmit() tea.Cmd {
 	}
 }
 
-// View implements tea.Model
-func (s *SettingsScreen) View() string {
+// View implements ScreenModel
+func (s *SettingsScreen) View() tea.View {
 	content := lipgloss.JoinVertical(
 		lipgloss.Left,
 		s.form.View(),
 		"",
 		s.help.View(s.keys),
 	)
-	return style.RenderSubscreen(s.width, s.height, "Settings", content)
+	return tea.NewView(style.RenderSubscreen(s.width, s.height, "Settings", content))
 }
 
 // SetSize updates the screen dimensions

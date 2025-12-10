@@ -132,8 +132,8 @@ func (s *ComposeMessageScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 	return s, cmd
 }
 
-// View implements tea.Model
-func (s *ComposeMessageScreen) View() string {
+// View implements ScreenModel
+func (s *ComposeMessageScreen) View() tea.View {
 	var content strings.Builder
 
 	// Show quoted message if this is a reply
@@ -147,12 +147,12 @@ func (s *ComposeMessageScreen) View() string {
 
 	content.WriteString(s.form.View())
 
-	return style.RenderSubscreen(
+	return tea.NewView(style.RenderSubscreen(
 		s.width,
 		s.height,
 		"Send Private Message to "+s.targetName,
 		content.String(),
-	)
+	))
 }
 
 // SetSize updates dimensions

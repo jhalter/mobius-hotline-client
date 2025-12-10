@@ -76,10 +76,9 @@ func (s *FilePickerScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 	return s, cmd
 }
 
-// View implements tea.Model
-func (s *FilePickerScreen) View() string {
-
-	return lipgloss.Place(
+// View implements ScreenModel
+func (s *FilePickerScreen) View() tea.View {
+	content := lipgloss.Place(
 		s.width,
 		s.height,
 		lipgloss.Center,
@@ -93,6 +92,7 @@ func (s *FilePickerScreen) View() string {
 		),
 		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background(style.CurrentTheme.BorderMuted)),
 	)
+	return tea.NewView(content)
 }
 
 // SetSize updates dimensions

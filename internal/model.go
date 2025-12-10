@@ -16,6 +16,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/google/uuid"
+	"github.com/jhalter/mobius-hotline-client/internal/style"
 	"github.com/jhalter/mobius/hotline"
 	"gopkg.in/yaml.v3"
 )
@@ -26,7 +27,7 @@ type Screen int
 // ScreenModel is the interface that all screens must implement
 type ScreenModel interface {
 	Update(tea.Msg) (ScreenModel, tea.Cmd)
-	View() string
+	View() tea.View
 }
 
 const (
@@ -664,18 +665,23 @@ func (m *Model) View() tea.View {
 		return v
 	}
 
-	screenContent := lipgloss.NewStyle().
-		//Background(style.CurrentTheme.BackgroundPanel).
-		Render(screen.View())
+	screenView := screen.View()
 
 	var v tea.View
 	// Show tab bar when connected to servers and on a server-related screen
 	if len(m.sessions) > 0 && isServerScreen(m.CurrentScreen()) {
 		tabBar := m.RenderTabBar()
-		v = tea.NewView(lipgloss.JoinVertical(lipgloss.Left, tabBar, screenContent))
+		tabBarHeight := lipgloss.Height(tabBar)
+		// Use lipgloss layers to compose tab bar above screen content
+		tabBarLayer := lipgloss.NewLayer(tabBar)
+		screenLayer := lipgloss.NewLayer(screenView.Content).Y(tabBarHeight)
+		canvas := lipgloss.NewCanvas(tabBarLayer, screenLayer)
+		v = tea.NewView(canvas)
 	} else {
-		v = tea.NewView(screenContent)
+		v = screenView
 	}
+	// Set global background color
+	v.BackgroundColor = style.CurrentTheme.BackgroundPanel
 	v.AltScreen = true
 	return v
 }

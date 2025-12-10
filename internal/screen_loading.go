@@ -63,25 +63,26 @@ func (s *LoadingScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 }
 
 // View renders the loading screen
-func (s *LoadingScreen) View() string {
+func (s *LoadingScreen) View() tea.View {
 	title := lipgloss.NewStyle().Align(lipgloss.Center).Render(style.Rainbow(lipgloss.NewStyle(), "Loading", style.Blends))
 
-	content := lipgloss.NewStyle().
+	body := lipgloss.NewStyle().
 		Padding(1).
 		Width(50).
 		Align(lipgloss.Center).
 		Render(s.spinner.View() + " " + s.message)
 
-	return lipgloss.Place(s.width, s.height,
+	content := lipgloss.Place(s.width, s.height,
 		lipgloss.Center, lipgloss.Center,
 		style.DialogBoxStyle.Render(lipgloss.JoinVertical(
 			lipgloss.Center,
 			title,
-			content,
+			body,
 		)),
 		lipgloss.WithWhitespaceChars("☃︎"),
 		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Foreground(style.Subtle)),
 	)
+	return tea.NewView(content)
 }
 
 // SetSize updates dimensions

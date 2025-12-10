@@ -129,14 +129,14 @@ func (s *NewsCategoryFormScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 	return s, cmd
 }
 
-// View implements tea.Model
-func (s *NewsCategoryFormScreen) View() string {
-	return style.RenderSubscreen(
+// View implements ScreenModel
+func (s *NewsCategoryFormScreen) View() tea.View {
+	return tea.NewView(style.RenderSubscreen(
 		s.width,
 		s.height,
 		"New News Category",
 		s.form.View(),
-	)
+	))
 }
 
 // SetSize updates the screen dimensions

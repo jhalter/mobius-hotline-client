@@ -110,10 +110,10 @@ func (s *FilesScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 	return s, cmd
 }
 
-// View implements tea.Model
-func (s *FilesScreen) View() string {
+// View implements ScreenModel
+func (s *FilesScreen) View() tea.View {
 	s.list.SetSize(s.width-10, s.height-10)
-	return style.RenderSubscreen(s.width, s.height, "Files", s.list.View())
+	return tea.NewView(style.RenderSubscreen(s.width, s.height, "Files", s.list.View()))
 }
 
 // SetSize updates dimensions

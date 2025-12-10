@@ -74,16 +74,15 @@ func (s *HomeScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 	return s, nil
 }
 
-// View implements tea.Model
-func (s *HomeScreen) View() string {
-	return lipgloss.Place(
+// View implements ScreenModel
+func (s *HomeScreen) View() tea.View {
+	content := lipgloss.Place(
 		s.width,
 		s.height,
 		lipgloss.Center,
 		lipgloss.Center,
 		lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			//Background(style.CurrentTheme.BackgroundPanel).
 			BorderForeground(style.ColorHotlineRed).
 			Padding(1, 3).
 			Render(
@@ -92,11 +91,9 @@ func (s *HomeScreen) View() string {
 						lipgloss.JoinVertical(
 							lipgloss.Left,
 							lipgloss.NewStyle().
-								//Background(style.CurrentTheme.BackgroundPanel).
 								Foreground(style.ColorHotlineRed).
 								Render(s.welcomeBanner),
 							lipgloss.NewStyle().
-								//Background(style.CurrentTheme.BackgroundPanel).
 								Render(strings.Join(
 									[]string{
 										fmt.Sprintf("%s Join Server", style.HotkeyStyle.Render("(j)")),
@@ -110,10 +107,11 @@ func (s *HomeScreen) View() string {
 						),
 					),
 			),
-		//lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background((style.CurrentTheme.Error))),
 		lipgloss.WithWhitespaceChars("⌘"),
 		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Foreground(style.Subtle)),
 	)
+	t := tea.NewView(content)
+	return t
 }
 
 // SetSize updates the screen dimensions

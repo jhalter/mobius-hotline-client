@@ -104,14 +104,14 @@ func (s *LegacyNewsPostScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 	return s, cmd
 }
 
-// View implements tea.Model
-func (s *LegacyNewsPostScreen) View() string {
-	return style.RenderSubscreen(
+// View implements ScreenModel
+func (s *LegacyNewsPostScreen) View() tea.View {
+	return tea.NewView(style.RenderSubscreen(
 		s.width,
 		s.height,
 		"New Messageboard Post",
 		s.form.View(),
-	)
+	))
 }
 
 // SetSize updates the screen dimensions

@@ -67,8 +67,8 @@ func (s *QuickMenuScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 	return s, nil
 }
 
-// View implements tea.Model
-func (s *QuickMenuScreen) View() string {
+// View implements ScreenModel
+func (s *QuickMenuScreen) View() tea.View {
 	// Build menu items
 	items := []string{
 		s.renderItem(0, "j", "Join Server"),
@@ -84,7 +84,7 @@ func (s *QuickMenuScreen) View() string {
 		BorderForeground(style.CurrentTheme.DialogBorder).
 		Padding(1, 2)
 
-	return lipgloss.Place(
+	content := lipgloss.Place(
 		s.width,
 		s.height,
 		lipgloss.Center,
@@ -93,6 +93,7 @@ func (s *QuickMenuScreen) View() string {
 		lipgloss.WithWhitespaceChars("~"),
 		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Foreground(style.Subtle)),
 	)
+	return tea.NewView(content)
 }
 
 // SetSize updates the screen dimensions

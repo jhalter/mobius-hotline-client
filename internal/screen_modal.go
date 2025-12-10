@@ -192,7 +192,7 @@ func (s *ModalScreen) handleFormComplete() tea.Cmd {
 }
 
 // View renders the modal screen
-func (s *ModalScreen) View() string {
+func (s *ModalScreen) View() tea.View {
 	title := lipgloss.NewStyle().
 		Align(lipgloss.Center).
 		Render(style.Rainbow(lipgloss.NewStyle(), s.title, style.Blends))
@@ -213,7 +213,7 @@ func (s *ModalScreen) View() string {
 			Render(s.form.View())
 	}
 
-	return lipgloss.Place(s.width, s.height,
+	content := lipgloss.Place(s.width, s.height,
 		lipgloss.Center, lipgloss.Center,
 		style.DialogBoxStyle.Render(lipgloss.JoinVertical(
 			lipgloss.Center,
@@ -224,6 +224,7 @@ func (s *ModalScreen) View() string {
 		lipgloss.WithWhitespaceChars("☃︎"),
 		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Foreground(style.Subtle)),
 	)
+	return tea.NewView(content)
 }
 
 // SetSize updates dimensions

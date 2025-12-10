@@ -180,9 +180,9 @@ func (s *NewsArticleViewScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 	return s, cmd
 }
 
-// View implements tea.Model
-func (s *NewsArticleViewScreen) View() string {
-	return lipgloss.Place(
+// View implements ScreenModel
+func (s *NewsArticleViewScreen) View() tea.View {
+	content := lipgloss.Place(
 		s.width,
 		s.height-10,
 		lipgloss.Left,
@@ -204,6 +204,7 @@ func (s *NewsArticleViewScreen) View() string {
 		lipgloss.WithWhitespaceChars("~"),
 		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Foreground(style.Subtle)),
 	)
+	return tea.NewView(content)
 }
 
 // SetSize updates dimensions
