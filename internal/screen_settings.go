@@ -46,6 +46,20 @@ type Settings struct {
 	Theme        string     `yaml:"Theme"`
 }
 
+var DefaultSettings = Settings{
+	Username: "unnamed",
+	IconID:   414,
+	Tracker:  "hltracker.com:5498",
+	Bookmarks: []Bookmark{
+		{
+			Name:     "The Mobius Strip",
+			Addr:     "mobius.trtphotl.com:5500",
+			Login:    "guest",
+			Password: "",
+		},
+	},
+}
+
 func (cp *Settings) IconBytes() []byte {
 	iconBytes := make([]byte, 2)
 	binary.BigEndian.PutUint16(iconBytes, uint16(cp.IconID))

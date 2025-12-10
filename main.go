@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"runtime"
+	"path/filepath"
 
 	"github.com/charmbracelet/log"
 	"github.com/jhalter/mobius-hotline-client/internal"
 	"github.com/muesli/termenv"
+	"gopkg.in/yaml.v3"
 )
 
 // Values swapped in by go-releaser at build time
@@ -28,11 +29,12 @@ func main() {
 
 	flag.Parse()
 
-	// Check if config file exists before proceeding
+	// Create config file with defaults if it doesn't exist
 	if _, err := os.Stat(*configPath); os.IsNotExist(err) {
-		fmt.Fprintf(os.Stderr, "Error: config file not found: %s\n\n", *configPath)
-		flag.Usage()
-		os.Exit(1)
+		if err := createDefaultConfig(*configPath); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: could not create config file: %v\n", err)
+			os.Exit(1)
+		}
 	}
 
 	// init DebugBuffer
@@ -55,24 +57,19 @@ func main() {
 	}
 }
 
-func defaultConfigPath() (cfgPath string) {
-	switch runtime.GOOS {
-	case "windows":
-		cfgPath = "mobius-client-config.yaml"
-	case "darwin":
-		if _, err := os.Stat("/usr/local/etc/mobius-client-config.yaml"); err == nil {
-			cfgPath = "/usr/local/etc/mobius-client-config.yaml"
-		} else if _, err := os.Stat("/opt/homebrew/etc/mobius-client-config.yaml"); err == nil {
-			cfgPath = "/opt/homebrew/etc/mobius-client-config.yaml"
-		} else {
-			cfgPath = "mobius-client-config.yaml"
-		}
-	case "linux":
-		cfgPath = "/usr/local/etc/mobius-client-config.yaml"
-	default:
-		fmt.Printf("unsupported OS")
+func defaultConfigPath() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: could not determine home directory: %v\n", err)
 		os.Exit(1)
 	}
+	return filepath.Join(home, ".mobius-client-config.yaml")
+}
 
-	return cfgPath
+func createDefaultConfig(path string) error {
+	data, err := yaml.Marshal(internal.DefaultSettings)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0644)
 }
