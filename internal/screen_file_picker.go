@@ -1,9 +1,9 @@
 package internal
 
 import (
-	"github.com/charmbracelet/bubbles/filepicker"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/filepicker"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/jhalter/mobius-hotline-client/internal/style"
 )
 
@@ -47,7 +47,8 @@ func NewFilePickerScreen(startDir string, m *Model) *FilePickerScreen {
 
 // Init implements tea.Model
 func (s *FilePickerScreen) Init() tea.Cmd {
-	return s.filePicker.Init()
+	cmd := s.filePicker.Init()
+	return cmd
 }
 
 // Update implements ScreenModel
@@ -65,7 +66,7 @@ func (s *FilePickerScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 		s.model.handleFilePickerCancelledMsg()
 		return s, nil
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		return s.handleKeys(msg)
 	}
 
@@ -90,7 +91,7 @@ func (s *FilePickerScreen) View() string {
 				s.filePicker.View(),
 			),
 		),
-		lipgloss.WithWhitespaceBackground(style.CurrentTheme.BorderMuted),
+		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background(style.CurrentTheme.BorderMuted)),
 	)
 }
 
@@ -102,7 +103,7 @@ func (s *FilePickerScreen) SetSize(width, height int) {
 }
 
 // handleKeys handles keyboard input
-func (s *FilePickerScreen) handleKeys(msg tea.KeyMsg) (ScreenModel, tea.Cmd) {
+func (s *FilePickerScreen) handleKeys(msg tea.KeyPressMsg) (ScreenModel, tea.Cmd) {
 	switch msg.String() {
 	case "esc":
 		return s, func() tea.Msg { return FilePickerCancelledMsg{} }

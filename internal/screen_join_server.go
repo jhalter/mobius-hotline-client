@@ -1,11 +1,11 @@
 package internal
 
 import (
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/huh/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/jhalter/mobius-hotline-client/internal/style"
 	"github.com/jhalter/mobius/hotline"
 )
@@ -206,7 +206,8 @@ func NewJoinServerScreen(m *Model) (*JoinServerScreen, tea.Cmd) {
 
 	screen.form = buildJoinServerForm(JoinServerModeConnect, &screen.name, &screen.server, &screen.login, &screen.password, &screen.useTLS, &screen.saveBookmark)
 
-	return screen, screen.form.Init()
+	cmd := screen.form.Init()
+	return screen, cmd
 }
 
 // NewJoinServerScreenForConnect creates a new screen pre-populated for connecting
@@ -228,7 +229,8 @@ func NewJoinServerScreenForConnect(serverAddr, login, password string, useTLS bo
 
 	screen.form = buildJoinServerForm(JoinServerModeConnect, &screen.name, &screen.server, &screen.login, &screen.password, &screen.useTLS, &screen.saveBookmark)
 
-	return screen, screen.form.Init()
+	cmd := screen.form.Init()
+	return screen, cmd
 }
 
 // NewJoinServerScreenForEdit creates a new screen for editing a bookmark
@@ -251,7 +253,8 @@ func NewJoinServerScreenForEdit(bm Bookmark, index int, m *Model) (*JoinServerSc
 
 	screen.form = buildJoinServerForm(JoinServerModeEditBookmark, &screen.name, &screen.server, &screen.login, &screen.password, &screen.useTLS, &screen.saveBookmark)
 
-	return screen, screen.form.Init()
+	cmd := screen.form.Init()
+	return screen, cmd
 }
 
 // NewJoinServerScreenForCreate creates a new screen for creating a bookmark
@@ -269,12 +272,14 @@ func NewJoinServerScreenForCreate(m *Model) (*JoinServerScreen, tea.Cmd) {
 
 	screen.form = buildJoinServerForm(JoinServerModeCreateBookmark, &screen.name, &screen.server, &screen.login, &screen.password, &screen.useTLS, &screen.saveBookmark)
 
-	return screen, screen.form.Init()
+	cmd := screen.form.Init()
+	return screen, cmd
 }
 
 // Init implements tea.Model
 func (s *JoinServerScreen) Init() tea.Cmd {
-	return s.form.Init()
+	cmd := s.form.Init()
+	return cmd
 }
 
 // Update implements ScreenModel
@@ -296,7 +301,7 @@ func (s *JoinServerScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 		s.model.handleJoinServerCancelledMsg(msg)
 		return s, nil
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "esc":
 			backPage := s.backPage

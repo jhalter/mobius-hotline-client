@@ -5,11 +5,11 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/list"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/list"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/huh/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/jhalter/mobius-hotline-client/internal/style"
 	"github.com/jhalter/mobius/hotline"
 )
@@ -238,7 +238,7 @@ func (s *NewsScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 		cmd := s.model.handleNewsCreateCategoryMsg()
 		return s, cmd
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		return s.handleKeys(msg)
 	}
 
@@ -248,7 +248,7 @@ func (s *NewsScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 	return s, cmd
 }
 
-func (s *NewsScreen) handleKeys(msg tea.KeyMsg) (ScreenModel, tea.Cmd) {
+func (s *NewsScreen) handleKeys(msg tea.KeyPressMsg) (ScreenModel, tea.Cmd) {
 	switch msg.String() {
 	case "esc":
 		// If we have a path, go back one level in the hierarchy
@@ -402,7 +402,7 @@ func (s *NewsScreen) View() string {
 				s.list.View(),
 			),
 		),
-		lipgloss.WithWhitespaceBackground(style.CurrentTheme.BorderMuted),
+		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background(style.CurrentTheme.BorderMuted)),
 	)
 }
 
@@ -698,7 +698,8 @@ func (s *NewsScreen) InitArticlePostForm(prefillSubject string, parentArticleID 
 		WithShowErrors(true).
 		WithTheme(style.FormTheme)
 
-	return s.articlePostForm.Init()
+	cmd := s.articlePostForm.Init()
+	return cmd
 }
 
 // InitBundleForm creates a Huh form for creating a new News Bundle
@@ -732,7 +733,8 @@ func (s *NewsScreen) InitBundleForm() tea.Cmd {
 		WithShowErrors(true).
 		WithTheme(style.FormTheme)
 
-	return s.bundleForm.Init()
+	cmd := s.bundleForm.Init()
+	return cmd
 }
 
 // InitCategoryForm creates a Huh form for creating a new News Category
@@ -766,7 +768,8 @@ func (s *NewsScreen) InitCategoryForm() tea.Cmd {
 		WithShowErrors(true).
 		WithTheme(style.FormTheme)
 
-	return s.categoryForm.Init()
+	cmd := s.categoryForm.Init()
+	return cmd
 }
 
 // IsFormActive returns true if any form is currently being displayed

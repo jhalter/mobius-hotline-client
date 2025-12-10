@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/viewport"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/jhalter/mobius-hotline-client/internal/style"
 	"github.com/jhalter/mobius/hotline"
 	"github.com/muesli/reflow/wordwrap"
@@ -100,7 +100,7 @@ func NewNewsArticleViewScreen(
 		),
 	}
 
-	vp := viewport.New(m.width-10, m.height-10)
+	vp := viewport.New(viewport.WithWidth(m.width-10), viewport.WithHeight(m.height-10))
 
 	screen := &NewsArticleViewScreen{
 		viewport:  vp,
@@ -137,7 +137,7 @@ func (s *NewsArticleViewScreen) updateViewportContent() {
 	)
 
 	// Wrap content to fit viewport width
-	contentWidth := s.viewport.Width - 2
+	contentWidth := s.viewport.Width() - 2
 	if contentWidth < 20 {
 		contentWidth = 20
 	}
@@ -170,7 +170,7 @@ func (s *NewsArticleViewScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 	case NewsArticleViewReplyMsg:
 		return s, s.model.handleNewsArticleViewReplyMsg(msg)
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		return s.handleKeys(msg)
 	}
 
@@ -202,7 +202,7 @@ func (s *NewsArticleViewScreen) View() string {
 			),
 		),
 		lipgloss.WithWhitespaceChars("~"),
-		lipgloss.WithWhitespaceForeground(style.Subtle),
+		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Foreground(style.Subtle)),
 	)
 }
 
@@ -210,13 +210,13 @@ func (s *NewsArticleViewScreen) View() string {
 func (s *NewsArticleViewScreen) SetSize(width, height int) {
 	s.width = width
 	s.height = height
-	s.viewport.Width = width - 10
-	s.viewport.Height = height - 16 // Account for title, help bar, padding
+	s.viewport.SetWidth(width - 10)
+	s.viewport.SetHeight(height - 16) // Account for title, help bar, padding
 	s.updateViewportContent()
 }
 
 // handleKeys handles keyboard input
-func (s *NewsArticleViewScreen) handleKeys(msg tea.KeyMsg) (ScreenModel, tea.Cmd) {
+func (s *NewsArticleViewScreen) handleKeys(msg tea.KeyPressMsg) (ScreenModel, tea.Cmd) {
 	switch msg.String() {
 	case "esc":
 		return s, func() tea.Msg { return NewsArticleViewCancelledMsg{} }

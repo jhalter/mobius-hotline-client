@@ -11,11 +11,11 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/list"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/list"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/jhalter/mobius-hotline-client/internal/style"
 	"github.com/jhalter/mobius/hotline"
 )
@@ -238,7 +238,7 @@ func (s *AccountsScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 		s.model.PopScreen()
 		return s, nil
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		return s.handleKeys(msg)
 	}
 
@@ -287,7 +287,7 @@ func (s *AccountsScreen) UpdateAccounts(accounts []accountItem) {
 }
 
 // handleKeys handles keyboard input
-func (s *AccountsScreen) handleKeys(msg tea.KeyMsg) (ScreenModel, tea.Cmd) {
+func (s *AccountsScreen) handleKeys(msg tea.KeyPressMsg) (ScreenModel, tea.Cmd) {
 	switch msg.String() {
 	case "n":
 		if s.userAccess.IsSet(hotline.AccessCreateUser) {

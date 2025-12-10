@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/jhalter/mobius-hotline-client/internal/style"
 )
 
@@ -67,7 +67,7 @@ func (s *HomeScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 		s.model.welcomeBanner = s.welcomeBanner
 		return s, nil
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		return s.handleKeys(msg)
 	}
 
@@ -110,9 +110,9 @@ func (s *HomeScreen) View() string {
 						),
 					),
 			),
-		//lipgloss.WithWhitespaceBackground((style.CurrentTheme.Error)),
+		//lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background((style.CurrentTheme.Error))),
 		lipgloss.WithWhitespaceChars("⌘"),
-		lipgloss.WithWhitespaceForeground(style.Subtle),
+		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Foreground(style.Subtle)),
 	)
 }
 
@@ -123,7 +123,7 @@ func (s *HomeScreen) SetSize(width, height int) {
 }
 
 // handleKeys handles key input for the home screen
-func (s *HomeScreen) handleKeys(msg tea.KeyMsg) (ScreenModel, tea.Cmd) {
+func (s *HomeScreen) handleKeys(msg tea.KeyPressMsg) (ScreenModel, tea.Cmd) {
 	switch msg.String() {
 	case "j":
 		return s, func() tea.Msg { return HomeJoinServerMsg{} }

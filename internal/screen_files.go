@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/list"
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/list"
+	tea "charm.land/bubbletea/v2"
 	"github.com/google/uuid"
 	"github.com/jhalter/mobius-hotline-client/internal/style"
 	"github.com/jhalter/mobius/hotline"
@@ -100,7 +100,7 @@ func (s *FilesScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 		s.model.handleFilesNavigateMsg(msg)
 		return s, nil
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		return s.handleKeys(msg)
 	}
 
@@ -125,7 +125,7 @@ func (s *FilesScreen) SetSize(width, height int) {
 }
 
 // handleKeys handles keyboard input
-func (s *FilesScreen) handleKeys(msg tea.KeyMsg) (ScreenModel, tea.Cmd) {
+func (s *FilesScreen) handleKeys(msg tea.KeyPressMsg) (ScreenModel, tea.Cmd) {
 	// Check for filtering state - let list handle most keys during filter
 	if s.list.FilterState() == list.Filtering {
 		if msg.String() == "esc" {

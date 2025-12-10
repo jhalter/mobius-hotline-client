@@ -4,11 +4,11 @@ import (
 	"encoding/binary"
 	"strconv"
 
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/huh/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/jhalter/mobius-hotline-client/internal/style"
 )
 
@@ -153,12 +153,14 @@ func NewSettingsScreen(prefs *Settings, m *Model) (*SettingsScreen, tea.Cmd) {
 
 	screen.form = buildSettingsForm(&screen.username, &screen.iconID, &screen.tracker, &screen.downloadDir, &screen.enableBell, &screen.enableSounds)
 
-	return screen, screen.form.Init()
+	cmd := screen.form.Init()
+	return screen, cmd
 }
 
 // Init implements tea.Model
 func (s *SettingsScreen) Init() tea.Cmd {
-	return s.form.Init()
+	cmd := s.form.Init()
+	return cmd
 }
 
 // Update implements ScreenModel
@@ -168,7 +170,7 @@ func (s *SettingsScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 		s.SetSize(msg.Width, msg.Height)
 		return s, nil
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "esc":
 			return s, func() tea.Msg { return SettingsCancelledMsg{} }

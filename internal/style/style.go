@@ -3,9 +3,10 @@ package style
 import (
 	"image/color"
 
-	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/huh"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/list"
+	"charm.land/huh/v2"
+	"charm.land/lipgloss/v2"
+	"charm.land/lipgloss/v2/compat"
 	"github.com/lucasb-eyer/go-colorful"
 	"github.com/muesli/gamut"
 )
@@ -33,9 +34,9 @@ var (
 	CategoryStyle      lipgloss.Style
 	TitleStyle         lipgloss.Style
 	DialogBoxStyle     lipgloss.Style
-	Subtle             lipgloss.AdaptiveColor
+	Subtle             compat.AdaptiveColor
 	Blends             []color.Color
-	FormTheme          *huh.Theme
+	FormTheme          huh.Theme
 	ListItemStyles     list.DefaultItemStyles
 )
 
@@ -128,34 +129,34 @@ func regenerateStyles() {
 	// Rainbow gradient colors
 	Blends = gamut.Blends(lipgloss.Color("#F25D94"), lipgloss.Color("#EDFF82"), 50)
 
-	// Form theme for huh forms
-	FormTheme = huh.ThemeCharm()
-	FormTheme.Focused.Title = FormTheme.Focused.Title.Foreground(t.Highlight)
-	FormTheme.Focused.SelectSelector = FormTheme.Focused.SelectSelector.Foreground(t.Highlight)
-	FormTheme.Focused.SelectedOption = FormTheme.Focused.SelectedOption.Foreground(t.Highlight)
-	FormTheme.Focused.FocusedButton = FormTheme.Focused.FocusedButton.
-		Foreground(lipgloss.Color("0")).
-		Background(t.Highlight)
-	FormTheme.Focused.BlurredButton = FormTheme.Focused.BlurredButton.
-		Foreground(t.TextMuted).
-		Background(t.BackgroundPanel)
-	FormTheme.Focused.TextInput.Cursor = FormTheme.Focused.TextInput.Cursor.Foreground(t.Highlight)
-	FormTheme.Focused.TextInput.Prompt = FormTheme.Focused.TextInput.Prompt.Foreground(t.Accent)
-	FormTheme.Blurred.Title = FormTheme.Blurred.Title.Foreground(t.TextMuted)
-	FormTheme.Blurred.TextInput.Prompt = FormTheme.Blurred.TextInput.Prompt.Foreground(t.TextMuted)
-	FormTheme.Blurred.SelectedOption = FormTheme.Blurred.SelectedOption.Foreground(t.Highlight)
-
-	// TEST
-	FormTheme.Blurred.FocusedButton = FormTheme.Blurred.FocusedButton.
-		Foreground(lipgloss.Color("0")).
-		Background(t.Highlight)
-
-	FormTheme.Blurred.BlurredButton = FormTheme.Blurred.BlurredButton.
-		Foreground(t.TextMuted).
-		Background(t.BackgroundPanel)
+	// Form theme for huh forms - uses a ThemeFunc to implement the Theme interface
+	FormTheme = huh.ThemeFunc(func(isDark bool) *huh.Styles {
+		styles := huh.ThemeCharm(isDark)
+		styles.Focused.Title = styles.Focused.Title.Foreground(t.Highlight)
+		styles.Focused.SelectSelector = styles.Focused.SelectSelector.Foreground(t.Highlight)
+		styles.Focused.SelectedOption = styles.Focused.SelectedOption.Foreground(t.Highlight)
+		styles.Focused.FocusedButton = styles.Focused.FocusedButton.
+			Foreground(lipgloss.Color("0")).
+			Background(t.Highlight)
+		styles.Focused.BlurredButton = styles.Focused.BlurredButton.
+			Foreground(t.TextMuted).
+			Background(t.BackgroundPanel)
+		styles.Focused.TextInput.Cursor = styles.Focused.TextInput.Cursor.Foreground(t.Highlight)
+		styles.Focused.TextInput.Prompt = styles.Focused.TextInput.Prompt.Foreground(t.Accent)
+		styles.Blurred.Title = styles.Blurred.Title.Foreground(t.TextMuted)
+		styles.Blurred.TextInput.Prompt = styles.Blurred.TextInput.Prompt.Foreground(t.TextMuted)
+		styles.Blurred.SelectedOption = styles.Blurred.SelectedOption.Foreground(t.Highlight)
+		styles.Blurred.FocusedButton = styles.Blurred.FocusedButton.
+			Foreground(lipgloss.Color("0")).
+			Background(t.Highlight)
+		styles.Blurred.BlurredButton = styles.Blurred.BlurredButton.
+			Foreground(t.TextMuted).
+			Background(t.BackgroundPanel)
+		return styles
+	})
 
 	// List item styles for bubbles/list component
-	ListItemStyles = list.NewDefaultItemStyles()
+	ListItemStyles = list.NewDefaultItemStyles(compat.HasDarkBackground)
 	ListItemStyles.SelectedTitle = ListItemStyles.SelectedTitle.
 		Foreground(t.Highlight).
 		BorderForeground(t.Highlight)
@@ -187,7 +188,7 @@ func RenderSubscreen(w, h int, title, content string) string {
 			),
 		),
 		lipgloss.WithWhitespaceChars(Background1),
-		lipgloss.WithWhitespaceForeground(Subtle),
+		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Foreground(Subtle)),
 	)
 
 }

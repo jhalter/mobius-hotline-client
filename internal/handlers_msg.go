@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/progress"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/progress"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/jhalter/mobius-hotline-client/internal/style"
 	"github.com/jhalter/mobius/hotline"
 )
@@ -683,8 +683,7 @@ func (m *Model) handleTaskProgressMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if task.Status == TaskActive {
 			prog, exists := m.taskProgress[taskProgressMessage.taskID]
 			if !exists {
-				prog = progress.New(progress.WithDefaultGradient())
-				prog.Width = 20 // Compact width for widget
+				prog = progress.New(progress.WithDefaultBlend(), progress.WithWidth(20))
 				m.taskProgress[taskProgressMessage.taskID] = prog
 			}
 

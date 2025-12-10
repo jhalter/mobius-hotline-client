@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/textinput"
+	"charm.land/bubbles/v2/viewport"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/jhalter/mobius-hotline-client/internal/style"
 	"github.com/jhalter/mobius/hotline"
 	"github.com/muesli/reflow/wordwrap"
@@ -103,7 +103,7 @@ type ServerScreen struct {
 func NewServerScreen(m *Model) *ServerScreen {
 	chatInput := textinput.New()
 	chatInput.Placeholder = "Type a message..."
-	chatInput.Width = 80
+	chatInput.SetWidth(80)
 	chatInput.Focus()
 
 	keys := serverScreenKeyMap{
@@ -138,9 +138,9 @@ func NewServerScreen(m *Model) *ServerScreen {
 	}
 
 	return &ServerScreen{
-		chatViewport: viewport.New(m.width-30, m.height-9),
+		chatViewport: viewport.New(viewport.WithWidth(m.width-30), viewport.WithHeight(m.height-9)),
 		chatInput:    chatInput,
-		userViewport: viewport.New(25, m.height-9),
+		userViewport: viewport.New(viewport.WithWidth(25), viewport.WithHeight(m.height-9)),
 		help:         help.New(),
 		keys:         keys,
 		width:        m.width,
@@ -192,7 +192,7 @@ func (s *ServerScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 		s.model.handleServerOpenTasksMsg()
 		return s, nil
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		return s.handleKeys(msg)
 	}
 
@@ -286,22 +286,22 @@ func (s *ServerScreen) SetSize(width, height int) {
 	chatWidth := width - 30
 	chatHeight := height - 9
 
-	s.chatViewport.Width = chatWidth
-	s.chatViewport.Height = chatHeight
+	s.chatViewport.SetWidth(chatWidth)
+	s.chatViewport.SetHeight(chatHeight)
 
 	// Update chat input width to match chat viewport
 	// Subtract additional padding for the input box border
-	s.chatInput.Width = chatWidth - 4
+	s.chatInput.SetWidth(chatWidth - 4)
 
-	s.userViewport.Width = 25
-	s.userViewport.Height = height - 9
+	s.userViewport.SetWidth(25)
+	s.userViewport.SetHeight(height - 9)
 
 	// Rebuild chat content with new width
 	s.rebuildChatContent()
 }
 
 // handleKeys handles keyboard input
-func (s *ServerScreen) handleKeys(msg tea.KeyMsg) (ScreenModel, tea.Cmd) {
+func (s *ServerScreen) handleKeys(msg tea.KeyPressMsg) (ScreenModel, tea.Cmd) {
 	switch msg.String() {
 	case "esc":
 		return s, func() tea.Msg { return ServerDisconnectRequestedMsg{} }

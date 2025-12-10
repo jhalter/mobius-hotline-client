@@ -5,11 +5,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/progress"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/progress"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/jhalter/mobius-hotline-client/internal/style"
 )
 
@@ -73,15 +73,15 @@ func (s *TasksScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 		s.model.PopScreen()
 		return s, nil
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		return s.handleKeys(msg)
 
 	case progress.FrameMsg:
 		// Handle progress animation updates
 		var cmds []tea.Cmd
 		for taskID, prog := range s.model.taskProgress {
-			model, cmd := prog.Update(msg)
-			s.model.taskProgress[taskID] = model.(progress.Model)
+			updatedModel, cmd := prog.Update(msg)
+			s.model.taskProgress[taskID] = updatedModel
 			if cmd != nil {
 				cmds = append(cmds, cmd)
 			}
@@ -142,7 +142,7 @@ func (s *TasksScreen) SetSize(width, height int) {
 }
 
 // handleKeys handles keyboard input
-func (s *TasksScreen) handleKeys(msg tea.KeyMsg) (ScreenModel, tea.Cmd) {
+func (s *TasksScreen) handleKeys(msg tea.KeyPressMsg) (ScreenModel, tea.Cmd) {
 	switch msg.String() {
 	case "esc":
 		return s, func() tea.Msg { return TasksCancelledMsg{} }

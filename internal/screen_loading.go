@@ -1,9 +1,9 @@
 package internal
 
 import (
-	"github.com/charmbracelet/bubbles/spinner"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/spinner"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/jhalter/mobius-hotline-client/internal/style"
 )
 
@@ -47,7 +47,7 @@ func (s *LoadingScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 		s.SetSize(msg.Width, msg.Height)
 		return s, nil
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		if msg.String() == "esc" {
 			return s, func() tea.Msg { return LoadingCancelledMsg{} }
 		}
@@ -80,7 +80,7 @@ func (s *LoadingScreen) View() string {
 			content,
 		)),
 		lipgloss.WithWhitespaceChars("☃︎"),
-		lipgloss.WithWhitespaceForeground(style.Subtle),
+		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Foreground(style.Subtle)),
 	)
 }
 

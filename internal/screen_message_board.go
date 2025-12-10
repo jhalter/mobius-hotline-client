@@ -3,11 +3,11 @@ package internal
 import (
 	"fmt"
 
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/viewport"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/jhalter/mobius-hotline-client/internal/style"
 	"github.com/jhalter/mobius/hotline"
 	"github.com/muesli/reflow/wordwrap"
@@ -80,7 +80,7 @@ func NewMessageBoardScreen(content string, m *Model) *MessageBoardScreen {
 		),
 	}
 
-	vp := viewport.New(m.width-10, m.height-10)
+	vp := viewport.New(viewport.WithWidth(m.width-10), viewport.WithHeight(m.height-10))
 	vp.SetContent(content)
 
 	return &MessageBoardScreen{
@@ -113,7 +113,7 @@ func (s *MessageBoardScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 	case MessageBoardPostRequestedMsg:
 		return s, s.model.handleMessageBoardPostRequestedMsg()
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		return s.handleKeys(msg)
 	}
 
@@ -145,7 +145,7 @@ func (s *MessageBoardScreen) View() string {
 			),
 		),
 		lipgloss.WithWhitespaceChars("~"),
-		lipgloss.WithWhitespaceForeground(style.Subtle),
+		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Foreground(style.Subtle)),
 	)
 }
 
@@ -153,12 +153,12 @@ func (s *MessageBoardScreen) View() string {
 func (s *MessageBoardScreen) SetSize(width, height int) {
 	s.width = width
 	s.height = height
-	s.viewport.Width = width - 10
-	s.viewport.Height = height - 10
+	s.viewport.SetWidth(width - 10)
+	s.viewport.SetHeight(height - 10)
 }
 
 // handleKeys handles keyboard input
-func (s *MessageBoardScreen) handleKeys(msg tea.KeyMsg) (ScreenModel, tea.Cmd) {
+func (s *MessageBoardScreen) handleKeys(msg tea.KeyPressMsg) (ScreenModel, tea.Cmd) {
 	switch msg.String() {
 	case "esc":
 		return s, func() tea.Msg { return MessageBoardCancelledMsg{} }

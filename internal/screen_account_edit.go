@@ -3,10 +3,10 @@ package internal
 import (
 	"fmt"
 
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/huh/v2"
 	"github.com/jhalter/mobius-hotline-client/internal/style"
 	"github.com/jhalter/mobius/hotline"
 )
@@ -173,12 +173,14 @@ func NewAccountEditScreen(account *accountItem, userAccess hotline.AccessBitmap,
 	screen.form = buildAccountForm(&screen.editedLogin, &screen.editedName, &screen.editedPassword,
 		&screen.selectedPerms, accessBits, formHeight)
 
-	return screen, screen.form.Init()
+	cmd := screen.form.Init()
+	return screen, cmd
 }
 
 // Init implements tea.Model
 func (s *AccountEditScreen) Init() tea.Cmd {
-	return s.form.Init()
+	cmd := s.form.Init()
+	return cmd
 }
 
 // Update handles messages and returns updated screen + commands
@@ -194,7 +196,7 @@ func (s *AccountEditScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 		}
 		return s, cmd
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		return s.handleKeys(msg)
 	}
 
@@ -227,7 +229,7 @@ func (s *AccountEditScreen) SetSize(width, height int) {
 }
 
 // handleKeys handles keyboard input
-func (s *AccountEditScreen) handleKeys(msg tea.KeyMsg) (ScreenModel, tea.Cmd) {
+func (s *AccountEditScreen) handleKeys(msg tea.KeyPressMsg) (ScreenModel, tea.Cmd) {
 	canEdit := s.userAccess.IsSet(hotline.AccessModifyUser) || s.isNewAccount
 
 	// ESC always cancels

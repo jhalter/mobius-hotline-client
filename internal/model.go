@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/progress"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/progress"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/google/uuid"
 	"github.com/jhalter/mobius/hotline"
 	"gopkg.in/yaml.v3"
@@ -425,7 +425,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.logger.Debug("Update UI", "tea.Msg", fmt.Sprintf("%v", msg), "currentScreen", m.CurrentScreen())
 
 	// Handle global keybindings
-	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+	if keyMsg, ok := msg.(tea.KeyPressMsg); ok {
 		switch keyMsg.String() {
 		case "ctrl+q":
 			return m, tea.Quit
@@ -541,7 +541,8 @@ func (m *Model) handleModalCancelledMsg() tea.Cmd {
 		// Check if there are more PMs pending
 		if len(session.privateMessages) > 0 {
 			m.updatePrivateMessageModal()
-			return m.modalScreen.Init()
+			cmd := m.modalScreen.Init()
+			return cmd
 		}
 	}
 
@@ -642,7 +643,8 @@ func (m *Model) handleModalButtonClickedMsg(msg ModalButtonClickedMsg) tea.Cmd {
 		// Close button: check if more PMs pending
 		if len(session.privateMessages) > 0 {
 			m.updatePrivateMessageModal()
-			return m.modalScreen.Init()
+			cmd := m.modalScreen.Init()
+			return cmd
 		}
 		m.PopScreen()
 
@@ -654,23 +656,28 @@ func (m *Model) handleModalButtonClickedMsg(msg ModalButtonClickedMsg) tea.Cmd {
 	return nil
 }
 
-func (m *Model) View() string {
+func (m *Model) View() tea.View {
 	screen := m.currentScreen()
 	if screen == nil {
-		return ""
+		v := tea.NewView("")
+		v.AltScreen = true
+		return v
 	}
 
 	screenContent := lipgloss.NewStyle().
 		//Background(style.CurrentTheme.BackgroundPanel).
 		Render(screen.View())
 
+	var v tea.View
 	// Show tab bar when connected to servers and on a server-related screen
 	if len(m.sessions) > 0 && isServerScreen(m.CurrentScreen()) {
 		tabBar := m.RenderTabBar()
-		return lipgloss.JoinVertical(lipgloss.Left, tabBar, screenContent)
+		v = tea.NewView(lipgloss.JoinVertical(lipgloss.Left, tabBar, screenContent))
+	} else {
+		v = tea.NewView(screenContent)
 	}
-
-	return screenContent
+	v.AltScreen = true
+	return v
 }
 
 func (m *Model) initiateFileUpload(localPath string) tea.Cmd {
@@ -748,7 +755,7 @@ func (m *Model) initiateFileUpload(localPath string) tea.Cmd {
 
 func (m *Model) Start() error {
 	// Store program reference for sending messages from transaction handlers
-	m.program = tea.NewProgram(m, tea.WithAltScreen())
+	m.program = tea.NewProgram(m)
 
 	// Transaction handlers are now registered per-session in registerSessionHandlers()
 

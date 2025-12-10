@@ -3,11 +3,11 @@ package internal
 import (
 	"fmt"
 
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/viewport"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/jhalter/mobius-hotline-client/internal/style"
 )
 
@@ -58,7 +58,7 @@ func NewLogsScreen(debugBuffer *DebugBuffer, m *Model) *LogsScreen {
 		),
 	}
 
-	vp := viewport.New(m.width-10, m.height-10)
+	vp := viewport.New(viewport.WithWidth(m.width-10), viewport.WithHeight(m.height-10))
 	vp.SetContent(debugBuffer.String())
 	vp.GotoBottom()
 
@@ -89,7 +89,7 @@ func (s *LogsScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 		s.model.PopScreen()
 		return s, nil
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		return s.handleKeys(msg)
 	}
 
@@ -120,12 +120,12 @@ func (s *LogsScreen) View() string {
 func (s *LogsScreen) SetSize(width, height int) {
 	s.width = width
 	s.height = height
-	s.viewport.Width = width - 10
-	s.viewport.Height = height - 10
+	s.viewport.SetWidth(width - 10)
+	s.viewport.SetHeight(height - 10)
 }
 
 // handleKeys handles keyboard input
-func (s *LogsScreen) handleKeys(msg tea.KeyMsg) (ScreenModel, tea.Cmd) {
+func (s *LogsScreen) handleKeys(msg tea.KeyPressMsg) (ScreenModel, tea.Cmd) {
 	switch msg.String() {
 	case "esc":
 		return s, func() tea.Msg { return LogsCancelledMsg{} }

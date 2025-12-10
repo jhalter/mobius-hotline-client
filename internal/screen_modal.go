@@ -1,9 +1,9 @@
 package internal
 
 import (
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/huh/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/jhalter/mobius-hotline-client/internal/style"
 	"github.com/muesli/reflow/wordwrap"
 )
@@ -88,11 +88,14 @@ func (s *ModalScreen) initForm() {
 	keyMap := huh.NewDefaultKeyMap()
 	keyMap.Confirm.Toggle.SetKeys("left", "right", "h", "l", "tab")
 
-	// Create theme based on app theme, without left border
-	theme := *style.FormTheme
-	theme.Focused.Base = theme.Focused.Base.
-		UnsetBorderLeft().
-		UnsetBorderStyle()
+	// Create custom theme function that modifies the base theme
+	modalTheme := huh.ThemeFunc(func(isDark bool) *huh.Styles {
+		styles := style.FormTheme.Theme(isDark)
+		styles.Focused.Base = styles.Focused.Base.
+			UnsetBorderLeft().
+			UnsetBorderStyle()
+		return styles
+	})
 
 	s.form = huh.NewForm(
 		huh.NewGroup(confirmField),
@@ -101,13 +104,14 @@ func (s *ModalScreen) initForm() {
 		WithShowHelp(false).
 		WithShowErrors(false).
 		WithKeyMap(keyMap).
-		WithTheme(&theme)
+		WithTheme(modalTheme)
 }
 
 // Init returns initial commands
 func (s *ModalScreen) Init() tea.Cmd {
 	if s.form != nil {
-		return s.form.Init()
+		cmd := s.form.Init()
+		return cmd
 	}
 	return nil
 }
@@ -119,7 +123,7 @@ func (s *ModalScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 		s.SetSize(msg.Width, msg.Height)
 		return s, nil
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		return s.handleKeys(msg)
 	}
 
@@ -142,7 +146,7 @@ func (s *ModalScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 }
 
 // handleKeys handles keyboard input
-func (s *ModalScreen) handleKeys(msg tea.KeyMsg) (ScreenModel, tea.Cmd) {
+func (s *ModalScreen) handleKeys(msg tea.KeyPressMsg) (ScreenModel, tea.Cmd) {
 	switch msg.String() {
 	case "esc":
 		return s, func() tea.Msg { return ModalCancelledMsg{} }
@@ -218,7 +222,7 @@ func (s *ModalScreen) View() string {
 			buttons,
 		)),
 		lipgloss.WithWhitespaceChars("☃︎"),
-		lipgloss.WithWhitespaceForeground(style.Subtle),
+		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Foreground(style.Subtle)),
 	)
 }
 

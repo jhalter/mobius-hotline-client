@@ -6,9 +6,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/list"
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/list"
+	tea "charm.land/bubbletea/v2"
 	"github.com/jhalter/mobius-hotline-client/internal/style"
 	"github.com/jhalter/mobius/hotline"
 )
@@ -68,7 +68,7 @@ func (s *TrackerScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 		s.model.handleTrackerServerSelectedMsg(msg)
 	case TrackerCancelledMsg:
 		s.model.handleTrackerCancelledMsg(msg)
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		// Handle custom keys when NOT actively filtering
 		if s.list.FilterState() != list.Filtering {
 			switch msg.String() {

@@ -3,8 +3,8 @@ package internal
 import (
 	"fmt"
 
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/list"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/list"
 	"github.com/jhalter/mobius-hotline-client/internal/style"
 )
 

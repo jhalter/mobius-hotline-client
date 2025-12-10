@@ -3,8 +3,8 @@ package internal
 import (
 	"fmt"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/jhalter/mobius-hotline-client/internal/style"
 )
 
@@ -60,7 +60,7 @@ func (s *QuickMenuScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 		s.model.PopScreen()
 		return s, nil
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		return s.handleKeys(msg)
 	}
 
@@ -91,7 +91,7 @@ func (s *QuickMenuScreen) View() string {
 		lipgloss.Center,
 		dialogStyle.Render(menuContent),
 		lipgloss.WithWhitespaceChars("~"),
-		lipgloss.WithWhitespaceForeground(style.Subtle),
+		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Foreground(style.Subtle)),
 	)
 }
 
@@ -102,7 +102,7 @@ func (s *QuickMenuScreen) SetSize(width, height int) {
 }
 
 // handleKeys handles key input for the quick menu
-func (s *QuickMenuScreen) handleKeys(msg tea.KeyMsg) (ScreenModel, tea.Cmd) {
+func (s *QuickMenuScreen) handleKeys(msg tea.KeyPressMsg) (ScreenModel, tea.Cmd) {
 	switch msg.String() {
 	case "esc":
 		return s, func() tea.Msg { return QuickMenuCancelledMsg{} }

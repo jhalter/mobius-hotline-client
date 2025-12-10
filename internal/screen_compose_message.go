@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/huh/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/jhalter/mobius-hotline-client/internal/style"
 )
 
@@ -71,12 +71,14 @@ func NewComposeMessageScreen(targetID [2]byte, targetName string, quoteText stri
 		quoteText:  quoteText,
 	}
 
-	return screen, form.Init()
+	cmd := form.Init()
+	return screen, cmd
 }
 
 // Init implements tea.Model
 func (s *ComposeMessageScreen) Init() tea.Cmd {
-	return s.form.Init()
+	cmd := s.form.Init()
+	return cmd
 }
 
 // Update implements ScreenModel
@@ -94,7 +96,7 @@ func (s *ComposeMessageScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 	case ComposeMessageCancelledMsg:
 		return s, s.model.handleComposeMessageCancelledMsg()
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		if msg.String() == "esc" {
 			return s, func() tea.Msg { return ComposeMessageCancelledMsg{} }
 		}

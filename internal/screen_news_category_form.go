@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/huh/v2"
 	"github.com/jhalter/mobius-hotline-client/internal/style"
 )
 
@@ -68,12 +68,14 @@ func NewNewsCategoryFormScreen(path []string, m *Model) (*NewsCategoryFormScreen
 		model:  m,
 	}
 
-	return screen, form.Init()
+	cmd := form.Init()
+	return screen, cmd
 }
 
 // Init implements tea.Model
 func (s *NewsCategoryFormScreen) Init() tea.Cmd {
-	return s.form.Init()
+	cmd := s.form.Init()
+	return cmd
 }
 
 // Update implements ScreenModel
@@ -92,7 +94,7 @@ func (s *NewsCategoryFormScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 		s.model.PopScreen()
 		return s, nil
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		if msg.String() == "esc" {
 			return s, func() tea.Msg { return NewsCategoryFormCancelledMsg{} }
 		}
