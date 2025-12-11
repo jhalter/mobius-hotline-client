@@ -79,7 +79,7 @@ func (s *LoadingScreen) View() tea.View {
 			title,
 			body,
 		)),
-		lipgloss.WithWhitespaceChars("☃︎"),
+		lipgloss.WithWhitespaceChars(style.CurrentTheme.BackgroundChar),
 		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Foreground(style.Subtle)),
 	)
 	return tea.NewView(content)

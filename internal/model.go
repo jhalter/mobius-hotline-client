@@ -682,6 +682,8 @@ func (m *Model) View() tea.View {
 	}
 	// Set global background color
 	v.BackgroundColor = style.CurrentTheme.BackgroundPanel
+	v.ForegroundColor = style.CurrentTheme.TextColor
+
 	v.AltScreen = true
 	return v
 }

@@ -187,7 +187,7 @@ func RenderSubscreen(w, h int, title, content string) string {
 				content,
 			),
 		),
-		lipgloss.WithWhitespaceChars(Background1),
+		lipgloss.WithWhitespaceChars(CurrentTheme.BackgroundChar),
 		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Foreground(Subtle)),
 	)
 

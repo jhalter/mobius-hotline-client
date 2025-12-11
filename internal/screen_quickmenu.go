@@ -90,7 +90,7 @@ func (s *QuickMenuScreen) View() tea.View {
 		lipgloss.Center,
 		lipgloss.Center,
 		dialogStyle.Render(menuContent),
-		lipgloss.WithWhitespaceChars("~"),
+		lipgloss.WithWhitespaceChars(style.CurrentTheme.BackgroundChar),
 		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Foreground(style.Subtle)),
 	)
 	return tea.NewView(content)

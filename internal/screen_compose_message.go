@@ -39,7 +39,6 @@ func NewComposeMessageScreen(targetID [2]byte, targetName string, quoteText stri
 		huh.NewGroup(
 			huh.NewText().
 				Key("message").
-				Title("Message").
 				Placeholder("Type your message...").
 				CharLimit(1000).
 				Validate(func(str string) error {
@@ -51,7 +50,6 @@ func NewComposeMessageScreen(targetID [2]byte, targetName string, quoteText stri
 
 			huh.NewConfirm().
 				Key("confirm").
-				Title("Send this message?").
 				Affirmative("Send").
 				Negative("Cancel"),
 		),

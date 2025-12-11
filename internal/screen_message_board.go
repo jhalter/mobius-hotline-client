@@ -144,7 +144,7 @@ func (s *MessageBoardScreen) View() tea.View {
 				),
 			),
 		),
-		lipgloss.WithWhitespaceChars("~"),
+		lipgloss.WithWhitespaceChars(style.CurrentTheme.BackgroundChar),
 		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Foreground(style.Subtle)),
 	)
 	return tea.NewView(content)

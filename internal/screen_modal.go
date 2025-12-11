@@ -221,7 +221,7 @@ func (s *ModalScreen) View() tea.View {
 			body,
 			buttons,
 		)),
-		lipgloss.WithWhitespaceChars("☃︎"),
+		lipgloss.WithWhitespaceChars(style.CurrentTheme.BackgroundChar),
 		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Foreground(style.Subtle)),
 	)
 	return tea.NewView(content)

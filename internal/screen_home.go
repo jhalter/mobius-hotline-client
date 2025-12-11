@@ -107,7 +107,7 @@ func (s *HomeScreen) View() tea.View {
 						),
 					),
 			),
-		lipgloss.WithWhitespaceChars("⌘"),
+		lipgloss.WithWhitespaceChars(style.CurrentTheme.BackgroundChar),
 		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Foreground(style.Subtle)),
 	)
 	t := tea.NewView(content)

@@ -12,6 +12,7 @@ type Theme struct {
 	Name string
 
 	// Text colors
+	TextColor color.Color // Default color of text
 	TextMuted color.Color // Muted/de-emphasized text (join/leave messages, stats, empty states)
 
 	// Highlight/accent colors
@@ -41,12 +42,15 @@ type Theme struct {
 
 	// Whitespace/subtle background pattern
 	Subtle color.Color
+
+	BackgroundChar string
 }
 
 // CurrentTheme is the active theme used throughout the application.
 // Uses the CharmTone color palette as the default and only theme.
 var CurrentTheme = Theme{
 	Name:            "CharmTone",
+	TextColor:       charmtone.Salt,
 	TextMuted:       charmtone.Squid,
 	Highlight:       charmtone.Charple,
 	Accent:          charmtone.Dolly,
@@ -60,4 +64,5 @@ var CurrentTheme = Theme{
 	GradientStart:   charmtone.Coral,
 	GradientEnd:     charmtone.Sriracha,
 	Subtle:          charmtone.Charcoal,
+	BackgroundChar:  "☃",
 }
