@@ -72,7 +72,7 @@ func NewMessageBoardScreen(content string, m *Model) *MessageBoardScreen {
 		),
 		Post: key.NewBinding(
 			key.WithKeys("ctrl+p"),
-			key.WithHelp("^P", "post"),
+			key.WithHelp("ctrl+p", "post"),
 		),
 		Back: key.NewBinding(
 			key.WithKeys("esc"),
@@ -88,7 +88,7 @@ func NewMessageBoardScreen(content string, m *Model) *MessageBoardScreen {
 		width:    m.width,
 		height:   m.height - 10,
 		model:    m,
-		help:     help.New(),
+		help:     style.NewHelp(),
 		keys:     keys,
 		content:  content,
 	}

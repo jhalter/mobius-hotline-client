@@ -67,7 +67,7 @@ func NewLogsScreen(debugBuffer *DebugBuffer, m *Model) *LogsScreen {
 		width:       m.width,
 		height:      m.height,
 		model:       m,
-		help:        help.New(),
+		help:        style.NewHelp(),
 		keys:        keys,
 		debugBuffer: debugBuffer,
 	}

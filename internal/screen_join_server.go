@@ -200,7 +200,7 @@ func NewJoinServerScreen(m *Model) (*JoinServerScreen, tea.Cmd) {
 		width:                m.width,
 		height:               m.height,
 		model:                m,
-		help:                 help.New(),
+		help:                 style.NewHelp(),
 		keys:                 newJoinServerKeyMap(),
 	}
 
@@ -219,7 +219,7 @@ func NewJoinServerScreenForConnect(serverAddr, login, password string, useTLS bo
 		width:                m.width,
 		height:               m.height,
 		model:                m,
-		help:                 help.New(),
+		help:                 style.NewHelp(),
 		keys:                 newJoinServerKeyMap(),
 		server:               serverAddr,
 		login:                login,
@@ -242,7 +242,7 @@ func NewJoinServerScreenForEdit(bm Bookmark, index int, m *Model) (*JoinServerSc
 		width:                m.width,
 		height:               m.height,
 		model:                m,
-		help:                 help.New(),
+		help:                 style.NewHelp(),
 		keys:                 newJoinServerKeyMap(),
 		name:                 bm.Name,
 		server:               bm.Addr,
@@ -266,7 +266,7 @@ func NewJoinServerScreenForCreate(m *Model) (*JoinServerScreen, tea.Cmd) {
 		width:                m.width,
 		height:               m.height,
 		model:                m,
-		help:                 help.New(),
+		help:                 style.NewHelp(),
 		keys:                 newJoinServerKeyMap(),
 	}
 

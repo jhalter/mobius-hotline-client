@@ -52,7 +52,7 @@ func NewTasksScreen(m *Model) *TasksScreen {
 		width:  m.width,
 		height: m.height,
 		model:  m,
-		help:   help.New(),
+		help:   style.NewHelp(),
 		keys:   keys,
 	}
 }

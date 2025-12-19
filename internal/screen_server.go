@@ -55,10 +55,18 @@ type serverScreenKeyMap struct {
 	Accounts     key.Binding
 	Disconnect   key.Binding
 	Send         key.Binding
+	FocusUsers   key.Binding
+	FocusChat    key.Binding
 }
 
 func (k serverScreenKeyMap) ShortHelp() []key.Binding {
-	bindings := []key.Binding{k.MessageBoard}
+	var bindings []key.Binding
+	if k.FocusUsers.Enabled() {
+		bindings = append(bindings, k.FocusUsers)
+	} else if k.FocusChat.Enabled() {
+		bindings = append(bindings, k.FocusChat)
+	}
+	bindings = append(bindings, k.MessageBoard)
 	if k.News.Enabled() {
 		bindings = append(bindings, k.News)
 	}
@@ -109,23 +117,23 @@ func NewServerScreen(m *Model) *ServerScreen {
 	keys := serverScreenKeyMap{
 		MessageBoard: key.NewBinding(
 			key.WithKeys("ctrl+b"),
-			key.WithHelp("^B", "messageboard"),
+			key.WithHelp("ctrl+b", "messageboard"),
 		),
 		News: key.NewBinding(
 			key.WithKeys("ctrl+n"),
-			key.WithHelp("^N", "news"),
+			key.WithHelp("ctrl+n", "news"),
 		),
 		Files: key.NewBinding(
 			key.WithKeys("ctrl+f"),
-			key.WithHelp("^F", "files"),
+			key.WithHelp("ctrl+f", "files"),
 		),
 		Logs: key.NewBinding(
 			key.WithKeys("ctrl+l"),
-			key.WithHelp("^L", "logs"),
+			key.WithHelp("ctrl+l", "logs"),
 		),
 		Accounts: key.NewBinding(
 			key.WithKeys("ctrl+a"),
-			key.WithHelp("^A", "accounts"),
+			key.WithHelp("ctrl+a", "accounts"),
 		),
 		Disconnect: key.NewBinding(
 			key.WithKeys("esc"),
@@ -135,13 +143,22 @@ func NewServerScreen(m *Model) *ServerScreen {
 			key.WithKeys("enter"),
 			key.WithHelp("enter", "send message"),
 		),
+		FocusUsers: key.NewBinding(
+			key.WithKeys("tab"),
+			key.WithHelp("tab", "focus users"),
+		),
+		FocusChat: key.NewBinding(
+			key.WithKeys("tab"),
+			key.WithHelp("tab", "focus chat"),
+			key.WithDisabled(),
+		),
 	}
 
 	return &ServerScreen{
 		chatViewport: viewport.New(viewport.WithWidth(m.width-30), viewport.WithHeight(m.height-9)),
 		chatInput:    chatInput,
 		userViewport: viewport.New(viewport.WithWidth(25), viewport.WithHeight(m.height-9)),
-		help:         help.New(),
+		help:         style.NewHelp(),
 		keys:         keys,
 		width:        m.width,
 		height:       m.height,
@@ -205,7 +222,7 @@ func (s *ServerScreen) Update(msg tea.Msg) (ScreenModel, tea.Cmd) {
 // View renders the screen
 func (s *ServerScreen) View() tea.View {
 	// Shortcuts
-	shortcuts := s.help.View(s.keys)
+	shortcuts := lipgloss.NewStyle().PaddingLeft(1).Render(s.help.View(s.keys))
 
 	// User list
 	var userListContent strings.Builder
@@ -268,13 +285,12 @@ func (s *ServerScreen) View() tea.View {
 
 	content := lipgloss.JoinVertical(
 		lipgloss.Left,
-		style.ServerTitleStyle.Render(fmt.Sprintf("Mobius - Connected to %s", s.serverName)),
-		shortcuts,
 		lipgloss.JoinHorizontal(
 			lipgloss.Top,
 			lipgloss.JoinVertical(lipgloss.Left, chatView, style.BoxStyle.Render(s.chatInput.View())),
 			lipgloss.JoinVertical(lipgloss.Left, userView, s.model.renderTaskWidget()),
 		),
+		shortcuts,
 	)
 	return tea.NewView(content)
 }
@@ -313,9 +329,13 @@ func (s *ServerScreen) handleKeys(msg tea.KeyPressMsg) (ScreenModel, tea.Cmd) {
 		if s.focusOnUserList {
 			// Blur chat input when switching to user list
 			s.chatInput.Blur()
+			s.keys.FocusUsers.SetEnabled(false)
+			s.keys.FocusChat.SetEnabled(true)
 		} else {
 			// Focus chat input when switching back
 			s.chatInput.Focus()
+			s.keys.FocusUsers.SetEnabled(true)
+			s.keys.FocusChat.SetEnabled(false)
 		}
 		return s, nil
 

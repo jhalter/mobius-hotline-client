@@ -3,10 +3,12 @@ package style
 import (
 	"image/color"
 
+	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/list"
 	"charm.land/huh/v2"
 	"charm.land/lipgloss/v2"
 	"charm.land/lipgloss/v2/compat"
+	"github.com/charmbracelet/x/exp/charmtone"
 	"github.com/lucasb-eyer/go-colorful"
 	"github.com/muesli/gamut"
 )
@@ -38,6 +40,7 @@ var (
 	Blends             []color.Color
 	FormTheme          huh.Theme
 	ListItemStyles     list.DefaultItemStyles
+	HelpStyles         help.Styles
 )
 
 func init() {
@@ -117,7 +120,7 @@ func regenerateStyles() {
 
 	DialogBoxStyle = lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(t.DialogBorder).
+		BorderForeground(t.BorderPrimary).
 		Padding(1, 0).
 		BorderTop(true).
 		BorderLeft(true).
@@ -136,7 +139,7 @@ func regenerateStyles() {
 		styles.Focused.SelectSelector = styles.Focused.SelectSelector.Foreground(t.Highlight)
 		styles.Focused.SelectedOption = styles.Focused.SelectedOption.Foreground(t.Highlight)
 		styles.Focused.FocusedButton = styles.Focused.FocusedButton.
-			Foreground(lipgloss.Color("0")).
+			Foreground(charmtone.Ash).
 			Background(t.Highlight)
 		styles.Focused.BlurredButton = styles.Focused.BlurredButton.
 			Foreground(t.TextMuted).
@@ -147,7 +150,7 @@ func regenerateStyles() {
 		styles.Blurred.TextInput.Prompt = styles.Blurred.TextInput.Prompt.Foreground(t.TextMuted)
 		styles.Blurred.SelectedOption = styles.Blurred.SelectedOption.Foreground(t.Highlight)
 		styles.Blurred.FocusedButton = styles.Blurred.FocusedButton.
-			Foreground(lipgloss.Color("0")).
+			Foreground(charmtone.Ash).
 			Background(t.Highlight)
 		styles.Blurred.BlurredButton = styles.Blurred.BlurredButton.
 			Foreground(t.TextMuted).
@@ -163,6 +166,24 @@ func regenerateStyles() {
 	ListItemStyles.SelectedDesc = ListItemStyles.SelectedDesc.
 		Foreground(t.Highlight).
 		BorderForeground(t.Highlight)
+
+	// Help styles for keybinding display
+	HelpStyles = help.Styles{
+		ShortKey:       lipgloss.NewStyle().Foreground(t.TextMuted),
+		ShortDesc:      lipgloss.NewStyle().Foreground(t.TextSubtle),
+		ShortSeparator: lipgloss.NewStyle().Foreground(t.BorderMuted),
+		Ellipsis:       lipgloss.NewStyle().Foreground(t.BorderMuted),
+		FullKey:        lipgloss.NewStyle().Foreground(t.TextMuted),
+		FullDesc:       lipgloss.NewStyle().Foreground(t.TextSubtle),
+		FullSeparator:  lipgloss.NewStyle().Foreground(t.BorderMuted),
+	}
+}
+
+// NewHelp creates a help.Model with the application's HelpStyles applied.
+func NewHelp() help.Model {
+	h := help.New()
+	h.Styles = HelpStyles
+	return h
 }
 
 func Rainbow(base lipgloss.Style, s string, colors []color.Color) string {

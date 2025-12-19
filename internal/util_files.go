@@ -74,7 +74,7 @@ func newFileDelegate() list.DefaultDelegate {
 			),
 			key.NewBinding(
 				key.WithKeys("ctrl+u"),
-				key.WithHelp("^u", "upload file"),
+				key.WithHelp("ctrl+u", "upload file"),
 			),
 		}
 	}
@@ -92,7 +92,7 @@ func newFileDelegate() list.DefaultDelegate {
 				),
 				key.NewBinding(
 					key.WithKeys("ctrl+u"),
-					key.WithHelp("^u", "upload file"),
+					key.WithHelp("ctrl+u", "upload file"),
 				),
 			},
 		}

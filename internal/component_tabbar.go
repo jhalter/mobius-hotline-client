@@ -34,15 +34,30 @@ func (m *Model) RenderTabBar() string {
 	}
 
 	var tabs []string
+
+	// Prepend app name with gradient styling
+	appName := style.ApplyBoldForegroundGrad("Mobius", style.CurrentTheme.GradientStart, style.CurrentTheme.GradientEnd)
+	appNameStyled := lipgloss.NewStyle().
+		Background(style.CurrentTheme.BackgroundPanel).
+		PaddingRight(2).
+		Render(appName)
+	tabs = append(tabs, appNameStyled)
+
 	for i, session := range m.sessions {
+		isActive := i == m.activeSessionIndex
+
 		// Determine tab label
 		tabLabel := session.DisplayName
 		if tabLabel == "" {
 			tabLabel = session.Address
 		}
-		// Truncate long names
-		if len(tabLabel) > 15 {
-			tabLabel = tabLabel[:12] + "..."
+		// Truncate long names - active tabs get more space
+		maxLen := 15
+		if isActive {
+			maxLen = 25
+		}
+		if len(tabLabel) > maxLen {
+			tabLabel = tabLabel[:maxLen-3] + "..."
 		}
 
 		// Keyboard shortcut indicator
@@ -59,7 +74,7 @@ func (m *Model) RenderTabBar() string {
 
 		// Style based on active state
 		var styledTab string
-		if i == m.activeSessionIndex {
+		if isActive {
 			styledTab = tabActiveStyle.Render(tabContent)
 		} else {
 			styledTab = tabInactiveStyle.Render(tabContent)
@@ -69,7 +84,7 @@ func (m *Model) RenderTabBar() string {
 	}
 
 	// Add "+" tab for new connections
-	plusContent := "^K +"
+	plusContent := "ctrl+k +"
 	plusTab := tabInactiveStyle.Render(plusContent)
 	tabs = append(tabs, plusTab)
 

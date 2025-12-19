@@ -290,7 +290,7 @@ func (s *NewsScreen) handleKeys(msg tea.KeyPressMsg) (ScreenModel, tea.Cmd) {
 		}
 		return s, nil
 
-	case " ":
+	case "space":
 		// Toggle expand/collapse for articles with children
 		selectedItem := s.list.SelectedItem()
 
@@ -386,25 +386,8 @@ func (s *NewsScreen) handleKeys(msg tea.KeyPressMsg) (ScreenModel, tea.Cmd) {
 
 // View implements ScreenModel
 func (s *NewsScreen) View() tea.View {
-	// Set news list dimensions
 	s.list.SetSize(s.width-10, s.height-10)
-
-	// Place modal centered with dim gray background
-	content := lipgloss.Place(
-		s.width,
-		s.height,
-		lipgloss.Center,
-		lipgloss.Center,
-		style.SubScreenStyle.Render(
-			lipgloss.JoinVertical(
-				lipgloss.Left,
-				style.SubTitleStyle.Render("News"),
-				s.list.View(),
-			),
-		),
-		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Background(style.CurrentTheme.BorderMuted)),
-	)
-	return tea.NewView(content)
+	return tea.NewView(style.RenderSubscreen(s.width, s.height, "News", s.list.View()))
 }
 
 // SetSize updates the screen dimensions
@@ -553,12 +536,12 @@ func newNewsBundleDelegate() list.DefaultDelegate {
 				key.WithHelp("enter", "select"),
 			),
 			key.NewBinding(
-				key.WithKeys("^B"),
-				key.WithHelp("^B", "new bundle"),
+				key.WithKeys("ctrl+b"),
+				key.WithHelp("ctrl+b", "new bundle"),
 			),
 			key.NewBinding(
-				key.WithKeys("^C"),
-				key.WithHelp("^C", "new category"),
+				key.WithKeys("ctrl+c"),
+				key.WithHelp("ctrl+c", "new category"),
 			),
 			key.NewBinding(
 				key.WithKeys("esc"),
@@ -609,12 +592,12 @@ func newNewsArticleDelegate() list.DefaultDelegate {
 				key.WithHelp("space", "expand/collapse"),
 			),
 			key.NewBinding(
-				key.WithKeys("^P"),
-				key.WithHelp("^P", "new article"),
+				key.WithKeys("ctrl+p"),
+				key.WithHelp("ctrl+p", "new article"),
 			),
 			key.NewBinding(
-				key.WithKeys("^R"),
-				key.WithHelp("^R", "reply"),
+				key.WithKeys("ctrl+r"),
+				key.WithHelp("ctrl+r", "reply"),
 			),
 			key.NewBinding(
 				key.WithKeys("esc"),

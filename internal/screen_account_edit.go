@@ -118,7 +118,7 @@ func NewAccountEditScreen(account *accountItem, userAccess hotline.AccessBitmap,
 		),
 		Delete: key.NewBinding(
 			key.WithKeys("ctrl+d"),
-			key.WithHelp("^D", "delete"),
+			key.WithHelp("ctrl+d", "delete"),
 		),
 		Esc: key.NewBinding(
 			key.WithKeys("esc"),
@@ -135,7 +135,7 @@ func NewAccountEditScreen(account *accountItem, userAccess hotline.AccessBitmap,
 		height:     m.height,
 		model:      m,
 		userAccess: userAccess,
-		help:       help.New(),
+		help:       style.NewHelp(),
 		keys:       keys,
 	}
 

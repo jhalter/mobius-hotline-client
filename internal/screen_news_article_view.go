@@ -92,7 +92,7 @@ func NewNewsArticleViewScreen(
 		),
 		Reply: key.NewBinding(
 			key.WithKeys("ctrl+r"),
-			key.WithHelp("^R", "reply"),
+			key.WithHelp("ctrl+r", "reply"),
 		),
 		Back: key.NewBinding(
 			key.WithKeys("esc"),
@@ -107,7 +107,7 @@ func NewNewsArticleViewScreen(
 		width:     m.width,
 		height:    m.height,
 		model:     m,
-		help:      help.New(),
+		help:      style.NewHelp(),
 		keys:      keys,
 		articleID: articleID,
 		title:     title,

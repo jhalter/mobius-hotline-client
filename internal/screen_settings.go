@@ -155,7 +155,7 @@ func NewSettingsScreen(prefs *Settings, m *Model) (*SettingsScreen, tea.Cmd) {
 		width:        m.width,
 		height:       m.height,
 		model:        m,
-		help:         help.New(),
+		help:         style.NewHelp(),
 		keys:         newSettingsKeyMap(),
 		username:     prefs.Username,
 		iconID:       strconv.Itoa(prefs.IconID),

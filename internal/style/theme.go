@@ -12,8 +12,9 @@ type Theme struct {
 	Name string
 
 	// Text colors
-	TextColor color.Color // Default color of text
-	TextMuted color.Color // Muted/de-emphasized text (join/leave messages, stats, empty states)
+	TextColor  color.Color // Default color of text
+	TextMuted  color.Color // Muted/de-emphasized text (join/leave messages, stats, empty states)
+	TextSubtle color.Color // Subtle text (help descriptions)
 
 	// Highlight/accent colors
 	Highlight color.Color // Primary highlight (titles, active items, categories)
@@ -52,6 +53,7 @@ var CurrentTheme = Theme{
 	Name:            "CharmTone",
 	TextColor:       charmtone.Salt,
 	TextMuted:       charmtone.Squid,
+	TextSubtle:      charmtone.Oyster,
 	Highlight:       charmtone.Charple,
 	Accent:          charmtone.Dolly,
 	Success:         charmtone.Guac,
@@ -60,7 +62,7 @@ var CurrentTheme = Theme{
 	BorderPrimary:   charmtone.Charple,
 	BorderMuted:     charmtone.Charcoal,
 	BackgroundPanel: charmtone.Pepper,
-	DialogBorder:    charmtone.Charple,
+	DialogBorder:    charmtone.Sapphire,
 	GradientStart:   charmtone.Coral,
 	GradientEnd:     charmtone.Sriracha,
 	Subtle:          charmtone.Charcoal,

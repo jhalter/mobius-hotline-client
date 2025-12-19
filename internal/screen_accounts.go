@@ -210,7 +210,7 @@ func NewAccountsScreen(accounts []accountItem, userAccess hotline.AccessBitmap, 
 		model:       m,
 		allAccounts: accounts,
 		userAccess:  userAccess,
-		help:        help.New(),
+		help:        style.NewHelp(),
 		keys:        keys,
 	}
 }
