@@ -79,15 +79,21 @@ func (m *Model) handleChatMsgfunc(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	chatMessage := msg.(chatMsg)
 
-	// Use regex to extract username (everything up to and including first colon)
-	re := regexp.MustCompile(`^[^:]*:`)
-	match := re.FindString(chatMessage.text)
-
 	var formattedMsg string
 
-	// Apply bold styling to username
-	message := strings.TrimPrefix(chatMessage.text, match)
-	formattedMsg = style.UsernameStyle.Render(match) + message
+	// Check if this is a system message (already styled, starts with <<<)
+	if strings.Contains(chatMessage.text, "<<<") {
+		// System messages are already styled, use as-is
+		formattedMsg = chatMessage.text
+	} else {
+		// Use regex to extract username (everything up to and including first colon)
+		re := regexp.MustCompile(`^[^:]*:`)
+		match := re.FindString(chatMessage.text)
+
+		// Apply bold styling to username
+		message := strings.TrimPrefix(chatMessage.text, match)
+		formattedMsg = style.UsernameStyle.Render(match) + message
+	}
 
 	// Add to server screen if it exists
 	if session.serverScreen != nil {
@@ -210,8 +216,9 @@ func (m *Model) handleServerConnectedMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Add initial join message to chat viewport
 	joinStyle := lipgloss.NewStyle().Bold(true).Foreground(style.CurrentTheme.TextMuted)
-	joinMsg := joinStyle.Render(fmt.Sprintf("→ %s joined", m.prefs.Username))
-	session.serverScreen.AddChatMessage(joinMsg)
+	timestamp := time.Now().Format("1/2/06 3:04:05 PM")
+	session.serverScreen.AddChatMessage(joinStyle.Render(fmt.Sprintf(" <<<   %s has joined   >>>", m.prefs.Username)))
+	session.serverScreen.AddChatMessage(joinStyle.Render(fmt.Sprintf(" <<<   %s    >>>", timestamp)))
 
 	return m, nil
 }

@@ -139,7 +139,9 @@ func (m *Model) HandleNotifyChangeUser(ctx context.Context, c *hotline.Client, t
 		}
 		// Send join message to chat
 		joinStyle := lipgloss.NewStyle().Bold(true).Foreground(style.CurrentTheme.TextMuted)
-		m.program.Send(chatMsg{text: joinStyle.Render(fmt.Sprintf("→ %s joined", newUser.Name))})
+		timestamp := time.Now().Format("1/2/06 3:04:05 PM")
+		m.program.Send(chatMsg{text: joinStyle.Render(fmt.Sprintf(" <<<   %s has joined   >>>", newUser.Name))})
+		m.program.Send(chatMsg{text: joinStyle.Render(fmt.Sprintf(" <<<   %s    >>>", timestamp))})
 	}
 
 	// Send message to Bubble Tea program to update UI
@@ -176,7 +178,9 @@ func (m *Model) HandleNotifyDeleteUser(ctx context.Context, c *hotline.Client, t
 	// Send leave message to chat
 	if leavingUsername != "" {
 		leaveStyle := lipgloss.NewStyle().Bold(true).Foreground(style.CurrentTheme.TextMuted)
-		m.program.Send(chatMsg{text: leaveStyle.Render(fmt.Sprintf("← %s left", leavingUsername))})
+		timestamp := time.Now().Format("1/2/06 3:04:05 PM")
+		m.program.Send(chatMsg{text: leaveStyle.Render(fmt.Sprintf(" <<<   %s has left   >>>", leavingUsername))})
+		m.program.Send(chatMsg{text: leaveStyle.Render(fmt.Sprintf(" <<<   %s    >>>", timestamp))})
 	}
 
 	// Send message to Bubble Tea program to update UI
