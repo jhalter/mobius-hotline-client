@@ -675,8 +675,8 @@ func (m *Model) View() tea.View {
 		// Use lipgloss layers to compose tab bar above screen content
 		tabBarLayer := lipgloss.NewLayer(tabBar)
 		screenLayer := lipgloss.NewLayer(screenView.Content).Y(tabBarHeight)
-		canvas := lipgloss.NewCanvas(tabBarLayer, screenLayer)
-		v = tea.NewView(canvas)
+		compositor := lipgloss.NewCompositor(tabBarLayer, screenLayer)
+		v = tea.NewView(compositor.Render())
 	} else {
 		v = screenView
 	}
