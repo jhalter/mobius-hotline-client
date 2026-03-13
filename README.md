@@ -18,20 +18,20 @@ Mobius Hotline Client is a cross-platform command line [Hotline](https://en.wiki
 | Change name & icon         | ✓    |
 | Display server agreement   | ✓    |
 | Public chat                | ✓    |
-| Private messages           | ~    |
-| User list                  |      |
-| User administration        |      |
-| News reading               |      |
-| News posting               |      |
+| Private messages           | ✓    |
+| User list                  | ✓    |
+| User administration        | ✓    |
+| News reading               | ✓    |
+| News posting               | ✓    |
 | Message board reading      | ✓    |
 | Message board posting      | ✓    |
 | File browsing              | ✓    |
-| File downloading           |      |
-| File uploading             |      |
-| File info                  |      |
-| File management            |      |
-| Folder downloading         |      |
-| Folder uploading           |      |
+| File downloading           | ✓    |
+| File uploading             | ✓    |
+| File info                  | ✓    |
+| File management            | ✓    |
+| Folder downloading         | x    |
+| Folder uploading           | x    |
 
 ## Usage
 
@@ -62,4 +62,4 @@ mobius-hotline-client -config ./mobius-client-config.yaml
 
 ## Screenshots
 
-<img width="837" alt="Screenshot 2024-07-21 at 4 14 51 PM" src="https://github.com/user-attachments/assets/b01d3deb-c8e0-46b4-9663-f94bc15fa0ec">
+![alt](https://github.com/user-attachments/assets/bdc71179-08ba-40fe-a521-7fb03ba11c51)
